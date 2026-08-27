@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.png" alt="Zaylo Logo" width="100" />
+
 # Zaylo
 
 **High-Performance, Private Local AI Inference Engine & Desktop Server**
