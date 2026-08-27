@@ -16,6 +16,8 @@ const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 function getPreloadPath(): string {
   // Check candidates in order of reliability
   const candidates = [
+    path.join(app.getAppPath(), 'dist-electron/preload/index.cjs'),
+    path.join(app.getAppPath(), 'dist-electron/preload.cjs'),
     path.resolve(__dirname, 'preload.cjs'),
     path.resolve(__dirname, '../preload.cjs'),
     path.resolve(__dirname, '../preload/index.cjs'),
@@ -28,25 +30,6 @@ function getPreloadPath(): string {
       return c;
     }
   }
-
-  // Fallback: write it inline if somehow missing
-  const fallbackPath = path.resolve(__dirname, 'preload.cjs');
-  const code = `const { contextBridge, ipcRenderer } = require('electron');
-const api = {
-  invoke(channel, args) { return ipcRenderer.invoke(channel, args); },
-  on(event, listener) {
-    const handler = (_e, data) => listener(data);
-    ipcRenderer.on(event, handler);
-    return () => { ipcRenderer.removeListener(event, handler); };
-  }
-};
-contextBridge.exposeInMainWorld('electronAPI', api);
-contextBridge.exposeInMainWorld('api', api);
-`;
-  try {
-    fs.writeFileSync(fallbackPath, code);
-    return fallbackPath;
-  } catch {}
 
   return candidates[0];
 }
@@ -84,7 +67,10 @@ async function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     await mainWindow.loadURL(VITE_DEV_SERVER_URL);
   } else {
-    await mainWindow.loadFile(path.join(appRoot, '../dist/index.html'));
+    const indexPath = fs.existsSync(path.join(app.getAppPath(), 'dist/index.html'))
+      ? path.join(app.getAppPath(), 'dist/index.html')
+      : path.join(appRoot, '../dist/index.html');
+    await mainWindow.loadFile(indexPath);
   }
 }
 

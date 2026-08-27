@@ -82,8 +82,9 @@ export class LlamaRuntime implements InferenceRuntime {
       ? Math.min(config.contextSize || 2048, 2048)
       : (config.contextSize || 4096);
 
+    const resolvedModelPath = path.resolve(config.modelPath);
     const args = [
-      '-m', config.modelPath,
+      '-m', resolvedModelPath,
       '-c', String(contextLength),
       '-ngl', String(config.gpuLayers),
       '-t', String(config.threads),
@@ -93,12 +94,11 @@ export class LlamaRuntime implements InferenceRuntime {
     ];
 
     if (config.lowMemoryMode) {
-      args.push('--mmap');
-      args.push('--flash-attn', 'on');
+      args.push('-fa');
       args.push('-ctk', 'q8_0');
       args.push('-ctv', 'q8_0');
     } else if (config.flashAttention !== false) {
-      args.push('--flash-attn', 'on');
+      args.push('-fa');
     }
 
     this.supervisor.setState('STARTING');
@@ -118,10 +118,13 @@ export class LlamaRuntime implements InferenceRuntime {
       }, 30000);
 
       try {
+        const binDir = path.dirname(this.binaryPath!);
         const child = spawn(this.binaryPath!, args, {
+          cwd: binDir,
           stdio: ['ignore', 'pipe', 'pipe'],
           env: {
             ...process.env,
+            PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
             GGML_METAL_PATH_RESOURCES: this.binaryPath ? this.binaryPath.replace(/llama-server$/, '') : undefined,
           },
         });

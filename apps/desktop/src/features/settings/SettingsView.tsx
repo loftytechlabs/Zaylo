@@ -94,7 +94,7 @@ export const SettingsView: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
-                Enables dynamic OS memory-mapped layer paging (<code className="font-mono text-zinc-300">--mmap</code>) and 8-bit quantized KV caching. Allows running larger <strong>7B, 8B, 12B, and 14B models</strong> on machines with low physical RAM (e.g. 8GB RAM) by loading only active layers on-demand.
+                Enables 8-bit quantized key-value tensor caching (<code className="font-mono text-zinc-300">-ctk q8_0 -ctv q8_0</code>) and Flash Attention. Allows running larger <strong>7B, 8B, 12B, and 14B models</strong> on machines with low physical RAM (e.g. 8GB RAM) with minimal memory footprint.
               </p>
             </div>
 
