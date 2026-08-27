@@ -1,0 +1,25 @@
+{
+  "name": "zaylo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "dev:desktop": "pnpm --filter @local-ai/desktop dev",
+    "cli": "pnpm --filter @local-ai/cli start",
+    "dist": "turbo run build && pnpm --filter @local-ai/desktop dist",
+    "dist:mac": "turbo run build && pnpm --filter @local-ai/desktop dist:mac",
+    "dist:win": "turbo run build && pnpm --filter @local-ai/desktop dist:win",
+    "dist:linux": "turbo run build && pnpm --filter @local-ai/desktop dist:linux",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  },
+  "packageManager": "pnpm@11.24.0"
+}

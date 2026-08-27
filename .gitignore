@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-electron/
+release/
+build/
+.turbo/
+.vite/
+*.log
+*.sqlite
+*.sqlite-journal
+*.gguf
+*.downloading
+.DS_Store
+.env
+.env.local

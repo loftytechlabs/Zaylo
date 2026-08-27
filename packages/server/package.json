@@ -1,0 +1,35 @@
+{
+  "name": "@local-ai/server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@local-ai/capabilities": "workspace:*",
+    "@local-ai/database": "workspace:*",
+    "@local-ai/hardware": "workspace:*",
+    "@local-ai/inference": "workspace:*",
+    "@local-ai/models": "workspace:*",
+    "@local-ai/network": "workspace:*",
+    "@local-ai/protocol": "workspace:*",
+    "@local-ai/security": "workspace:*",
+    "@local-ai/shared": "workspace:*",
+    "fastify": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2"
+  }
+}

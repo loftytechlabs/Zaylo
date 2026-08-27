@@ -1,0 +1,28 @@
+{
+  "name": "@local-ai/database",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@local-ai/shared": "workspace:*",
+    "drizzle-orm": "^0.38.4",
+    "sql.js": "^1.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/sql.js": "^1.4.11",
+    "typescript": "^5.8.2"
+  }
+}
