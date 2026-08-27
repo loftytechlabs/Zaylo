@@ -9,7 +9,6 @@ import {
   Terminal,
   Gauge,
   Settings,
-  Sparkles,
 } from 'lucide-react';
 import { useAppStore, NavTab } from '../../stores/useAppStore';
 
@@ -43,8 +42,8 @@ export const Sidebar: React.FC = () => {
 
         {/* Brand */}
         <div className="px-5 pb-3.5 pt-0.5 flex items-center gap-3 border-b border-[#202227]">
-          <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
-            <Sparkles className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+            <img src="/logo.png" alt="Zaylo Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="font-semibold text-sm tracking-wide text-zinc-100">Zaylo</div>

@@ -450,6 +450,11 @@ export function getWebChatHtml(): string {
   <header>
     <div class="brand-section">
       <div class="server-dot" title="Server Online"></div>
+      <svg width="22" height="22" viewBox="0 0 1000 1000" style="margin-right: 2px; flex-shrink: 0;">
+        <polygon points="340,240 600,240 450,400 190,400" fill="#60a5fa" />
+        <polygon points="700,240 810,240 270,800 160,800" fill="#3b82f6" />
+        <polygon points="410,640 670,640 520,800 260,800" fill="#60a5fa" />
+      </svg>
       <span class="brand-title">Zaylo</span>
       <select id="model-select" class="model-selector" onchange="onModelChange(this.value)">
         <option value="default">Default Model</option>
