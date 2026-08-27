@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Zaylo High-Performance Local AI Inference Engine and Server",
   "author": "Lofty Tech Labs <contact@loftytechlabs.com>",
+  "homepage": "https://github.com/loftytechlabs/Zaylo",
+  "license": "MIT",
+  "repository": "https://github.com/loftytechlabs/Zaylo",
   "private": true,
   "type": "module",
   "scripts": {
