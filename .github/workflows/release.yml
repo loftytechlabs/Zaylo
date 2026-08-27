@@ -13,6 +13,9 @@ jobs:
   build-desktop:
     name: Build Desktop App (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -22,15 +25,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - name: Install Linux Build Dependencies
         if: runner.os == 'Linux'
@@ -40,8 +43,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pnpm config set enable-pre-post-scripts true
           pnpm install --no-frozen-lockfile
-          pnpm approve-builds --all || true
 
       - name: Build monorepo packages
         run: pnpm build
@@ -49,6 +52,7 @@ jobs:
       - name: Package Desktop Installers
         run: pnpm --filter @local-ai/desktop dist
         env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
