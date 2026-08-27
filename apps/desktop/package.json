@@ -1,6 +1,6 @@
 {
   "name": "@local-ai/desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zaylo High-Performance Local AI Server Desktop App",
   "author": "Lofty Tech Labs <contact@loftytechlabs.com>",
   "homepage": "https://github.com/loftytechlabs/Zaylo",
@@ -58,7 +58,7 @@
         { "target": "deb", "arch": ["x64"] }
       ],
       "executableName": "zaylo",
-      "artifactName": "Zaylo-1.0.0.${ext}",
+      "artifactName": "Zaylo-${version}.${ext}",
       "maintainer": "Lofty Tech Labs <contact@loftytechlabs.com>",
       "synopsis": "Zaylo High-Performance Local AI Inference Server",
       "category": "Development"

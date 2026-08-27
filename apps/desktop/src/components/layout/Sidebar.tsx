@@ -47,7 +47,7 @@ export const Sidebar: React.FC = () => {
           </div>
           <div>
             <div className="font-semibold text-sm tracking-wide text-zinc-100">Zaylo</div>
-            <div className="text-[11px] text-zinc-500 font-mono">v1.0.0 • AI Engine</div>
+            <div className="text-[11px] text-zinc-500 font-mono">v1.0.1 • AI Engine</div>
           </div>
         </div>
 

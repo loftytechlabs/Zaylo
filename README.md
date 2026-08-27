@@ -29,12 +29,12 @@ Download pre-compiled release binaries for your operating system:
 
 | Operating System | Architecture | Format | Download Link |
 | :--- | :--- | :---: | :--- |
-| macOS | Apple Silicon (M1, M2, M3, M4) | .dmg | [Download Zaylo for Mac (Apple Silicon)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.0-arm64.dmg) |
-| macOS | Intel Core (x86_64) | .dmg | [Download Zaylo for Mac (Intel)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.0.dmg) |
-| Windows | 10 / 11 (64-bit Installer) | .exe | [Download Zaylo for Windows (Setup)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo.Setup.1.0.0.exe) |
-| Windows | 10 / 11 (64-bit Portable) | .exe | [Download Zaylo for Windows (Portable)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo.1.0.0.exe) |
-| Linux | Universal AppImage | .AppImage | [Download Zaylo for Linux (AppImage)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.0.AppImage) |
-| Linux | Debian / Ubuntu | .deb | [Download Zaylo for Linux (.deb)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.0.deb) |
+| macOS | Apple Silicon (M1, M2, M3, M4) | .dmg | [Download Zaylo for Mac (Apple Silicon)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.1-arm64.dmg) |
+| macOS | Intel Core (x86_64) | .dmg | [Download Zaylo for Mac (Intel)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.1.dmg) |
+| Windows | 10 / 11 (64-bit Installer) | .exe | [Download Zaylo for Windows (Setup)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo.Setup.1.0.1.exe) |
+| Windows | 10 / 11 (64-bit Portable) | .exe | [Download Zaylo for Windows (Portable)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo.1.0.1.exe) |
+| Linux | Universal AppImage | .AppImage | [Download Zaylo for Linux (AppImage)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.1.AppImage) |
+| Linux | Debian / Ubuntu | .deb | [Download Zaylo for Linux (.deb)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.1.deb) |
 
 ---
 
