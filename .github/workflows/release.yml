@@ -42,9 +42,7 @@ jobs:
           sudo apt-get install -y libarchive-tools libgbm-dev
 
       - name: Install dependencies
-        run: |
-          pnpm config set enable-pre-post-scripts true
-          pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build monorepo packages
         run: pnpm build

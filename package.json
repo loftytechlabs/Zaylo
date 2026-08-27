@@ -21,5 +21,14 @@
     "typescript": "^5.8.2",
     "vitest": "^3.0.7"
   },
-  "packageManager": "pnpm@11.24.0"
+  "packageManager": "pnpm@11.24.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "electron-winstaller",
+      "esbuild",
+      "better-sqlite3",
+      "sql.js"
+    ]
+  }
 }
