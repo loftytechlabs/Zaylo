@@ -1,6 +1,8 @@
 {
   "name": "@local-ai/desktop",
   "version": "1.0.0",
+  "description": "Zaylo High-Performance Local AI Server Desktop App",
+  "author": "Lofty Tech Labs",
   "private": true,
   "type": "module",
   "main": "dist-electron/main/index.js",
