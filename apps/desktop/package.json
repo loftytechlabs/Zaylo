@@ -18,6 +18,11 @@
   "build": {
     "appId": "com.zaylo.ai",
     "productName": "Zaylo",
+    "publish": {
+      "provider": "github",
+      "owner": "loftytechlabs",
+      "repo": "Zaylo"
+    },
     "directories": {
       "output": "release"
     },
