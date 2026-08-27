@@ -18,6 +18,7 @@
   "build": {
     "appId": "com.zaylo.ai",
     "productName": "Zaylo",
+    "executableName": "zaylo",
     "publish": {
       "provider": "github",
       "owner": "loftytechlabs",
@@ -41,13 +42,15 @@
       "target": [
         { "target": "nsis", "arch": ["x64"] },
         { "target": "portable", "arch": ["x64"] }
-      ]
+      ],
+      "executableName": "zaylo"
     },
     "linux": {
       "target": [
         { "target": "AppImage", "arch": ["x64"] },
         { "target": "deb", "arch": ["x64"] }
       ],
+      "executableName": "zaylo",
       "category": "Development"
     },
     "nsis": {
