@@ -1,6 +1,8 @@
 {
   "name": "zaylo",
   "version": "1.0.0",
+  "description": "Zaylo High-Performance Local AI Inference Engine and Server",
+  "author": "Lofty Tech Labs <contact@loftytechlabs.com>",
   "private": true,
   "type": "module",
   "scripts": {

@@ -2,7 +2,7 @@
   "name": "@local-ai/desktop",
   "version": "1.0.0",
   "description": "Zaylo High-Performance Local AI Server Desktop App",
-  "author": "Lofty Tech Labs",
+  "author": "Lofty Tech Labs <contact@loftytechlabs.com>",
   "private": true,
   "type": "module",
   "main": "dist-electron/main/index.js",
@@ -51,6 +51,8 @@
         { "target": "deb", "arch": ["x64"] }
       ],
       "executableName": "zaylo",
+      "maintainer": "Lofty Tech Labs <contact@loftytechlabs.com>",
+      "synopsis": "Zaylo High-Performance Local AI Inference Server",
       "category": "Development"
     },
     "nsis": {
