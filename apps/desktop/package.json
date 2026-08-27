@@ -53,10 +53,19 @@
         { "target": "AppImage", "arch": ["x64"] },
         { "target": "deb", "arch": ["x64"] }
       ],
+      "packageName": "zaylo",
       "executableName": "zaylo",
+      "artifactName": "Zaylo-1.0.0.${ext}",
       "maintainer": "Lofty Tech Labs <contact@loftytechlabs.com>",
       "synopsis": "Zaylo High-Performance Local AI Inference Server",
       "category": "Development"
+    },
+    "deb": {
+      "packageName": "zaylo",
+      "artifactName": "Zaylo-1.0.0-amd64.deb"
+    },
+    "appImage": {
+      "artifactName": "Zaylo-1.0.0.AppImage"
     },
     "nsis": {
       "oneClick": false,
