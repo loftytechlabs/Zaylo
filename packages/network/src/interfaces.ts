@@ -13,22 +13,34 @@ export class NetworkScanner {
           let type: NetworkInterfaceInfo['type'] = 'other';
           const lowerName = name.toLowerCase();
 
-          if (addr.internal || lowerName.includes('lo') || addr.address.startsWith('127.')) {
+          const isVirtual =
+            lowerName.includes('vethernet') ||
+            lowerName.includes('wsl') ||
+            lowerName.includes('virtual') ||
+            lowerName.includes('vmware') ||
+            lowerName.includes('hyper-v') ||
+            lowerName.includes('docker') ||
+            lowerName.includes('tailscale') ||
+            lowerName.includes('zerotier') ||
+            lowerName.includes('tap') ||
+            lowerName.includes('tun');
+
+          if (addr.internal || lowerName.includes('lo') || lowerName.includes('loopback')) {
             type = 'loopback';
           } else if (
-            lowerName.includes('wi') ||
-            lowerName.includes('wlan') ||
-            lowerName.includes('wireless') ||
-            lowerName.startsWith('en0') ||
-            lowerName.startsWith('wlp')
+            !isVirtual &&
+            (lowerName.includes('wi') ||
+              lowerName.includes('wl') ||
+              lowerName.includes('wlan') ||
+              lowerName.includes('wireless') ||
+              lowerName.startsWith('en0'))
           ) {
             type = 'wifi';
           } else if (
-            lowerName.includes('eth') ||
-            lowerName.includes('ethernet') ||
-            lowerName.includes('lan') ||
-            lowerName.includes('local area') ||
-            lowerName.startsWith('en')
+            !isVirtual &&
+            (lowerName.includes('eth') ||
+              lowerName.includes('en') ||
+              lowerName.includes('local area connection'))
           ) {
             type = 'ethernet';
           }
@@ -37,7 +49,7 @@ export class NetworkScanner {
             name,
             address: addr.address,
             family: 'IPv4',
-            internal: addr.internal || addr.address.startsWith('127.'),
+            internal: addr.internal,
             type,
             mac: addr.mac,
           });
@@ -50,50 +62,33 @@ export class NetworkScanner {
 
   public static getPrimaryLANAddress(): string | null {
     const ifaces = this.getInterfaces();
-
-    // 1. Filter out internal, loopback, and link-local (169.254.x.x) addresses
-    const valid = ifaces.filter(
-      (i) =>
-        !i.internal &&
-        !i.address.startsWith('127.') &&
-        !i.address.startsWith('169.254.') &&
-        i.address !== '0.0.0.0'
-    );
+    
+    // Valid non-internal IPv4 addresses that are not link-local (169.254) or loopback
+    const valid = ifaces.filter((i) => {
+      if (i.internal || i.type === 'loopback') return false;
+      const ip = i.address;
+      if (!ip || ip.startsWith('127.') || ip.startsWith('169.254.') || ip === '0.0.0.0') return false;
+      return true;
+    });
 
     if (valid.length === 0) return null;
 
-    // 2. Score candidates: prioritize real physical Wi-Fi/Ethernet on home/office subnets (192.168.x.x, 10.x.x.x)
-    const scored = valid.map((i) => {
-      let score = 0;
-      const lowerName = i.name.toLowerCase();
+    // 1. Prioritize Wi-Fi or Ethernet on standard home/office subnets (192.168.x.x)
+    const classC = valid.find((i) => (i.type === 'wifi' || i.type === 'ethernet') && i.address.startsWith('192.168.'));
+    if (classC) return classC.address;
 
-      // Deprioritize virtual adapters (Hyper-V, WSL, VirtualBox, VMware, Docker)
-      if (
-        lowerName.includes('vethernet') ||
-        lowerName.includes('virtual') ||
-        lowerName.includes('vbox') ||
-        lowerName.includes('vmnet') ||
-        lowerName.includes('docker') ||
-        lowerName.includes('wsl') ||
-        lowerName.includes('tailscale') ||
-        lowerName.includes('zerotier')
-      ) {
-        score -= 50;
-      }
+    // 2. Prioritize Wi-Fi or Ethernet on class A (10.x.x.x)
+    const classA = valid.find((i) => (i.type === 'wifi' || i.type === 'ethernet') && i.address.startsWith('10.'));
+    if (classA) return classA.address;
 
-      // Prioritize Wi-Fi and Ethernet
-      if (i.type === 'wifi') score += 40;
-      if (i.type === 'ethernet') score += 30;
+    // 3. Any Wi-Fi or Ethernet
+    const standardLan = valid.find((i) => i.type === 'wifi' || i.type === 'ethernet');
+    if (standardLan) return standardLan.address;
 
-      // Prioritize standard home/LAN subnets
-      if (i.address.startsWith('192.168.')) score += 30;
-      else if (i.address.startsWith('10.')) score += 20;
-      else if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(i.address)) score += 15;
+    // 4. Any 192.168.x.x or 10.x.x.x
+    const anyPrivate = valid.find((i) => i.address.startsWith('192.168.') || i.address.startsWith('10.'));
+    if (anyPrivate) return anyPrivate.address;
 
-      return { address: i.address, score };
-    });
-
-    scored.sort((a, b) => b.score - a.score);
-    return scored[0]?.address || valid[0].address;
+    return valid[0].address;
   }
 }
