@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, nativeImage } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -39,24 +39,19 @@ function getWindowIconPath(): string | undefined {
   const iconFileName = isWin ? 'icon.ico' : 'icon.png';
 
   const candidates = [
-    // Production dist path (inside asar or appPath)
-    path.join(app.getAppPath(), 'dist', iconFileName),
-    path.join(app.getAppPath(), 'dist', 'icon.ico'),
-    path.join(app.getAppPath(), 'dist', 'icon.png'),
-    // Relative to dist-electron
-    path.resolve(__dirname, '../dist', iconFileName),
-    path.resolve(__dirname, '../dist', 'icon.ico'),
-    path.resolve(__dirname, '../dist', 'icon.png'),
-    // Dev build & public folders
-    path.join(app.getAppPath(), 'public', iconFileName),
-    path.join(app.getAppPath(), 'public', 'icon.ico'),
-    path.join(app.getAppPath(), 'public', 'icon.png'),
+    // Build & source icons (high-res 1024x1024)
     path.join(app.getAppPath(), 'build', iconFileName),
-    path.join(app.getAppPath(), 'build', 'icon.ico'),
     path.join(app.getAppPath(), 'build', 'icon.png'),
     path.resolve(__dirname, '../../build', iconFileName),
-    path.resolve(__dirname, '../../build', 'icon.ico'),
     path.resolve(__dirname, '../../build', 'icon.png'),
+    path.resolve(__dirname, '../build', iconFileName),
+    path.resolve(__dirname, '../build', 'icon.png'),
+    path.join(app.getAppPath(), 'public', iconFileName),
+    path.join(app.getAppPath(), 'public', 'icon.png'),
+    path.join(app.getAppPath(), 'dist', iconFileName),
+    path.join(app.getAppPath(), 'dist', 'icon.png'),
+    path.resolve(__dirname, '../dist', iconFileName),
+    path.resolve(__dirname, '../dist', 'icon.png'),
   ];
 
   for (const c of candidates) {
@@ -75,13 +70,15 @@ async function createWindow() {
     console.log('[Electron Main] Window Icon Verified:', iconPath);
   }
 
+  const windowIcon = iconPath ? nativeImage.createFromPath(iconPath) : undefined;
+
   mainWindow = new BrowserWindow({
     width: 1380,
     height: 880,
     minWidth: 1100,
     minHeight: 700,
     title: 'Zaylo',
-    icon: iconPath,
+    icon: (windowIcon && !windowIcon.isEmpty()) ? windowIcon : iconPath,
     backgroundColor: '#0c0d0e',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: process.platform === 'darwin' ? { x: 16, y: 10 } : undefined,
@@ -113,8 +110,18 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
+  const iconPath = getWindowIconPath();
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.zaylo.ai');
+  } else if (process.platform === 'darwin' && app.dock && iconPath) {
+    try {
+      const dockIcon = nativeImage.createFromPath(iconPath);
+      if (!dockIcon.isEmpty()) {
+        app.dock.setIcon(dockIcon);
+      }
+    } catch (e) {
+      console.warn('[Electron Main] Could not set dock icon:', e);
+    }
   }
   return createWindow();
 });
