@@ -3,6 +3,7 @@ dist/
 dist-electron/
 release/
 build/
+!apps/desktop/build/
 .turbo/
 .vite/
 *.log
