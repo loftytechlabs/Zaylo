@@ -7,12 +7,14 @@ import {
   Layers,
   Zap,
   HardDrive,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
 import { api } from '../../api/client';
 
 export const SettingsView: React.FC = () => {
-  const { serverConfig, updateServerConfig } = useAppStore();
+  const { serverConfig, updateServerConfig, theme, setTheme } = useAppStore();
 
   const [port, setPort] = useState(serverConfig?.port || 8080);
   const [maxConcurrency, setMaxConcurrency] = useState(serverConfig?.maxConcurrentRequests || 4);
@@ -80,8 +82,76 @@ export const SettingsView: React.FC = () => {
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
+        {/* Appearance & Theme Selector */}
+        <div className="p-6 rounded-xl bg-[#111317] border border-[#22252c] space-y-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                <Sun className="w-4 h-4 text-amber-400" />
+                Appearance & Theme
+              </h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Customize your interface with high-contrast Dark theme or clean White theme.
+              </p>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-950 text-blue-300 border border-blue-800/60 uppercase">
+              {theme} mode
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* Dark Theme Option */}
+            <button
+              type="button"
+              onClick={() => setTheme('dark')}
+              className={`p-4 rounded-lg border text-left transition-all flex items-start gap-3.5 ${
+                theme === 'dark'
+                  ? 'border-blue-500 bg-[#161922] ring-1 ring-blue-500/50'
+                  : 'border-[#22252c] bg-[#0c0d10] hover:border-zinc-700'
+              }`}
+            >
+              <div className="p-2 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 shrink-0">
+                <Moon className="w-4 h-4 text-blue-400" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-zinc-100">Dark Theme</span>
+                  {theme === 'dark' && <Check className="w-3.5 h-3.5 text-blue-400" />}
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-tight">
+                  High-contrast dark slate palette designed for low-light environments.
+                </p>
+              </div>
+            </button>
+
+            {/* White / Light Theme Option */}
+            <button
+              type="button"
+              onClick={() => setTheme('light')}
+              className={`p-4 rounded-lg border text-left transition-all flex items-start gap-3.5 ${
+                theme === 'light'
+                  ? 'border-blue-500 bg-white ring-1 ring-blue-500/50 text-zinc-900 shadow-sm'
+                  : 'border-[#22252c] bg-[#0c0d10] hover:border-zinc-700'
+              }`}
+            >
+              <div className="p-2 rounded bg-zinc-100 border border-zinc-200 text-zinc-700 shrink-0">
+                <Sun className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-zinc-100">Clean White Theme</span>
+                  {theme === 'light' && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-tight">
+                  Crisp pure white surfaces with blue accents and zero purple or violet tint.
+                </p>
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* 1. Low-Memory Layer Streaming Mode Card */}
-        <div className="p-6 rounded-xl bg-gradient-to-r from-[#12151d] via-[#111318] to-[#16121f] border border-blue-900/40 space-y-5 shadow-lg">
+        <div className="p-6 rounded-xl bg-gradient-to-r from-[#12151d] via-[#111318] to-[#121622] border border-blue-900/40 space-y-5 shadow-lg">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">

@@ -44,7 +44,7 @@ export const DevicesView: React.FC = () => {
   const getDeviceIcon = (name: string, ua?: string) => {
     const text = ((name || '') + ' ' + (ua || '')).toLowerCase();
     if (text.includes('iphone') || text.includes('android') || text.includes('phone') || text.includes('mobile')) {
-      return <Smartphone className="w-4 h-4 text-purple-400 shrink-0" />;
+      return <Smartphone className="w-4 h-4 text-blue-400 shrink-0" />;
     }
     if (text.includes('ipad') || text.includes('tablet')) {
       return <Tablet className="w-4 h-4 text-blue-400 shrink-0" />;
@@ -58,7 +58,7 @@ export const DevicesView: React.FC = () => {
       <div className="flex items-center justify-between border-b border-[#202227] pb-4">
         <div>
           <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-purple-400" />
+            <Smartphone className="w-4 h-4 text-blue-400" />
             Connected & Paired Devices
           </h2>
           <p className="text-xs text-zinc-400 mt-0.5">
@@ -76,7 +76,7 @@ export const DevicesView: React.FC = () => {
           </button>
           <button
             onClick={handleOpenPairing}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors"
           >
             <QrCode className="w-4 h-4" />
             <span>Pair New Device</span>
@@ -191,7 +191,7 @@ export const DevicesView: React.FC = () => {
 
             <div>
               <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-purple-400" />
+                <QrCode className="w-4 h-4 text-blue-400" />
                 Pair Mobile Device or Tablet
               </h3>
               <p className="text-xs text-zinc-400 mt-1">

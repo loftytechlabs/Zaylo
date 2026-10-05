@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Play, Square, RefreshCw, Copy, Check } from 'lucide-react';
+import { Play, Square, RefreshCw, Copy, Check, Sun, Moon } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
 
 export const Header: React.FC = () => {
   const {
     activeTab,
+    theme,
+    toggleTheme,
     serverState,
     serverInstance,
     serverConfig,
@@ -112,6 +114,20 @@ export const Header: React.FC = () => {
             <RefreshCw className={`w-3.5 h-3.5 ${loadingAction ? 'animate-spin' : ''}`} />
           </button>
         )}
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="p-1.5 rounded-md bg-[#16181d] hover:bg-[#1f2229] border border-[#272a32] text-zinc-400 hover:text-zinc-200 transition-colors flex items-center justify-center"
+          title={theme === 'dark' ? 'Switch to White Theme' : 'Switch to Dark Theme'}
+          aria-label="Toggle Theme"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-3.5 h-3.5 text-amber-400" />
+          ) : (
+            <Moon className="w-3.5 h-3.5 text-blue-600" />
+          )}
+        </button>
       </div>
     </header>
   );

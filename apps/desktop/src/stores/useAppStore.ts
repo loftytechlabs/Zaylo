@@ -33,6 +33,11 @@ interface AppStore {
   activeTab: NavTab;
   setActiveTab: (tab: NavTab) => void;
 
+  // Theme
+  theme: 'dark' | 'light';
+  setTheme: (theme: 'dark' | 'light') => void;
+  toggleTheme: () => void;
+
   // Onboarding
   showOnboarding: boolean;
   setShowOnboarding: (show: boolean) => void;
@@ -116,9 +121,40 @@ interface AppStore {
   stopGeneration: () => void;
 }
 
+const getInitialTheme = (): 'dark' | 'light' => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const saved = localStorage.getItem('zaylo_theme');
+    if (saved === 'light' || saved === 'dark') {
+      if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+      return saved;
+    }
+  }
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+  return 'dark';
+};
+
 export const useAppStore = create<AppStore>((set, get) => ({
   activeTab: 'overview',
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  theme: getInitialTheme(),
+  setTheme: (theme) => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('zaylo_theme', theme);
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+    set({ theme });
+  },
+  toggleTheme: () => {
+    const next = get().theme === 'dark' ? 'light' : 'dark';
+    get().setTheme(next);
+  },
 
   showOnboarding: false,
   setShowOnboarding: (show) => set({ showOnboarding: show }),

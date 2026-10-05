@@ -116,12 +116,12 @@ export const PerformanceView: React.FC = () => {
         <div className="p-5 rounded-lg bg-[#111317] border border-[#22252c] space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-              <Clock className="w-4 h-4 text-purple-400" />
+              <Clock className="w-4 h-4 text-cyan-400" />
               <span>INFERENCE LATENCY</span>
             </div>
             <span className="text-sm font-mono font-bold text-zinc-100">{latencyMs} ms</span>
           </div>
-          {renderSparkline(latSeries, '#a855f7', 1000)}
+          {renderSparkline(latSeries, '#06b6d4', 1000)}
           <div className="text-[11px] text-zinc-500 font-mono text-right">Last 60 seconds</div>
         </div>
       </div>

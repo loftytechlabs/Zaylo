@@ -207,7 +207,7 @@ for await (const chunk of stream) {
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-4rem)]">
       {/* 1. Mobile & Web Chat Access Banner */}
-      <div className="p-6 rounded-xl bg-gradient-to-r from-blue-950/40 via-[#121622] to-purple-950/30 border border-blue-800/40 space-y-4">
+      <div className="p-6 rounded-xl bg-gradient-to-r from-blue-950/40 via-[#121622] to-slate-900/30 border border-blue-800/40 space-y-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -344,7 +344,7 @@ for await (const chunk of stream) {
           <div className="p-4 rounded-md bg-[#0c0d10] border border-[#1d2027] flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
-                <Wifi className="w-3.5 h-3.5 text-purple-400" />
+                <Wifi className="w-3.5 h-3.5 text-blue-400" />
                 LAN Network Access
               </div>
               <p className="text-[11px] text-zinc-500">
@@ -358,7 +358,7 @@ for await (const chunk of stream) {
               onClick={() => handleToggleLan(!serverConfig?.lanEnabled)}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 serverConfig?.lanEnabled
-                  ? 'bg-purple-950 text-purple-300 border border-purple-800'
+                  ? 'bg-blue-950 text-blue-300 border border-blue-800'
                   : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
               }`}
             >

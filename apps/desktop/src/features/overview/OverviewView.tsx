@@ -90,7 +90,7 @@ export const OverviewView: React.FC = () => {
           <div>
             <div className="flex items-center justify-between text-xs text-zinc-400 font-mono mb-2">
               <span>CONNECTED DEVICES</span>
-              <Smartphone className="w-4 h-4 text-purple-400" />
+              <Smartphone className="w-4 h-4 text-blue-400" />
             </div>
             {(() => {
               const onlineCount = devices.filter((d) => !d.isRevoked && Date.now() - d.lastRequestAt < 45000).length;
@@ -108,7 +108,7 @@ export const OverviewView: React.FC = () => {
             <span className="text-zinc-500">{serverConfig?.lanEnabled ? 'LAN Active' : 'LAN Disabled'}</span>
             <button
               onClick={() => setActiveTab('devices')}
-              className="text-purple-400 hover:text-purple-300 font-medium"
+              className="text-blue-400 hover:text-blue-300 font-medium"
             >
               Manage Devices →
             </button>

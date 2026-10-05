@@ -348,16 +348,16 @@ export const OnboardingWizard: React.FC = () => {
                 onClick={() => setEnableLan(true)}
                 className={`p-4 rounded-lg border cursor-pointer transition-all ${
                   enableLan
-                    ? 'bg-purple-950/40 border-purple-500/80 ring-1 ring-purple-500/40'
+                    ? 'bg-blue-950/40 border-blue-500/80 ring-1 ring-blue-500/40'
                     : 'bg-[#0d0f12] border-[#22252c]'
                 }`}
               >
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-zinc-200 flex items-center gap-1.5">
-                    <Wifi className="w-3.5 h-3.5 text-purple-400" />
+                    <Wifi className="w-3.5 h-3.5 text-blue-400" />
                     Enable Local Network (LAN) Access
                   </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-300">
                     Multi-Device
                   </span>
                 </div>

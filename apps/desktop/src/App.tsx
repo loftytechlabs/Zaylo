@@ -19,6 +19,7 @@ import type { SystemMetricSample, StructuredLog } from '@local-ai/shared';
 export const App: React.FC = () => {
   const {
     activeTab,
+    theme,
     fetchHardware,
     fetchServerState,
     fetchModels,
@@ -27,6 +28,10 @@ export const App: React.FC = () => {
     updateMetric,
     addLog,
   } = useAppStore();
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     // Initial data fetch
@@ -63,7 +68,7 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex h-screen w-screen bg-[#090a0b] text-zinc-100 overflow-hidden select-none font-sans">
+    <div data-theme={theme} className="app-root flex h-screen w-screen bg-[#090a0b] text-zinc-100 overflow-hidden select-none font-sans">
       {/* Sidebar Navigation */}
       <Sidebar />
 
