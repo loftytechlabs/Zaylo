@@ -462,6 +462,9 @@ export function getWebChatHtml(): string {
     </div>
 
     <div class="header-actions">
+      <button class="icon-btn" id="rag-btn" onclick="toggleRag()" title="Toggle Local Document RAG" style="font-size: 11px; font-weight: 700; width: auto; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--card-border); color: var(--text-muted);">
+        RAG: OFF
+      </button>
       <button class="icon-btn" onclick="clearConversation()" title="Clear Chat">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
       </button>
@@ -483,7 +486,16 @@ export function getWebChatHtml(): string {
 
   <!-- Input Area -->
   <footer>
+    <div id="image-preview-bar" style="display:none; padding: 6px 12px; background: #12151d; border: 1px solid #252b3b; border-radius: 8px; margin-bottom: 6px; align-items: center; gap: 8px;">
+      <img id="image-preview-thumb" src="" style="width: 28px; height: 28px; object-fit: cover; border-radius: 4px;" />
+      <span id="image-preview-name" style="font-size: 11px; color: #d1d5db; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+      <button onclick="clearAttachedImage()" style="background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 16px; line-height: 1;">&times;</button>
+    </div>
     <div class="input-wrapper">
+      <input type="file" id="image-file-input" accept="image/*" style="display:none" onchange="handleImageSelected(event)" />
+      <button class="icon-btn" onclick="document.getElementById('image-file-input').click()" title="Attach Image for Vision" style="flex-shrink:0;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </button>
       <textarea
         id="prompt-input"
         rows="1"
@@ -536,6 +548,9 @@ export function getWebChatHtml(): string {
     let abortController = null;
     let messages = [];
     let selectedModel = localStorage.getItem('local_ai_selected_model') || 'default';
+    let isRagActive = false;
+    let attachedImageData = null;
+    let attachedImageName = '';
 
     // Parse URL params for key=... or pair=... from QR pairing
     const urlParams = new URLSearchParams(window.location.search);
@@ -632,6 +647,52 @@ export function getWebChatHtml(): string {
       localStorage.setItem('local_ai_selected_model', val);
     }
 
+    function toggleRag() {
+      isRagActive = !isRagActive;
+      const ragBtn = document.getElementById('rag-btn');
+      if (ragBtn) {
+        if (isRagActive) {
+          ragBtn.innerText = 'RAG: ON';
+          ragBtn.style.color = '#3b82f6';
+          ragBtn.style.borderColor = '#3b82f6';
+          ragBtn.style.background = 'rgba(59, 130, 246, 0.15)';
+        } else {
+          ragBtn.innerText = 'RAG: OFF';
+          ragBtn.style.color = 'var(--text-muted)';
+          ragBtn.style.borderColor = 'var(--card-border)';
+          ragBtn.style.background = 'transparent';
+        }
+      }
+    }
+
+    function handleImageSelected(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        attachedImageData = evt.target.result;
+        attachedImageName = file.name;
+        const bar = document.getElementById('image-preview-bar');
+        const thumb = document.getElementById('image-preview-thumb');
+        const name = document.getElementById('image-preview-name');
+        if (bar && thumb && name) {
+          thumb.src = attachedImageData;
+          name.innerText = attachedImageName;
+          bar.style.display = 'flex';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearAttachedImage() {
+      attachedImageData = null;
+      attachedImageName = '';
+      const bar = document.getElementById('image-preview-bar');
+      const input = document.getElementById('image-file-input');
+      if (bar) bar.style.display = 'none';
+      if (input) input.value = '';
+    }
+
     function autoResize(el) {
       el.style.height = 'auto';
       el.style.height = Math.min(el.scrollHeight, 140) + 'px';
@@ -671,7 +732,7 @@ export function getWebChatHtml(): string {
       \`;
     }
 
-    function appendMessage(role, text) {
+    function appendMessage(role, text, imageUrl) {
       const wrap = document.createElement('div');
       wrap.className = \`msg-wrap \${role}\`;
 
@@ -681,10 +742,24 @@ export function getWebChatHtml(): string {
 
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
+      if (imageUrl) {
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.style.maxWidth = '220px';
+        img.style.maxHeight = '180px';
+        img.style.borderRadius = '8px';
+        img.style.display = 'block';
+        img.style.marginBottom = text ? '8px' : '0';
+        bubble.appendChild(img);
+      }
       if (role === 'user') {
-        bubble.innerText = text;
+        if (text) {
+          const txt = document.createElement('div');
+          txt.innerText = text;
+          bubble.appendChild(txt);
+        }
       } else {
-        bubble.innerHTML = marked.parse(text);
+        bubble.innerHTML += marked.parse(text);
       }
 
       if (role === 'assistant') {
@@ -728,15 +803,28 @@ export function getWebChatHtml(): string {
 
     async function sendMessage() {
       const text = promptInput.value.trim();
-      if (!text || isGenerating) return;
+      if ((!text && !attachedImageData) || isGenerating) return;
+
+      const currentImage = attachedImageData;
+      clearAttachedImage();
 
       promptInput.value = '';
       promptInput.style.height = 'auto';
       setButtonGenerating(true);
 
       // Append user bubble
-      appendMessage('user', text);
-      messages.push({ role: 'user', content: text });
+      appendMessage('user', text, currentImage);
+
+      let userMsgContent;
+      if (currentImage) {
+        userMsgContent = [
+          { type: 'text', text: text || 'Analyze this image.' },
+          { type: 'image_url', image_url: { url: currentImage } }
+        ];
+      } else {
+        userMsgContent = text;
+      }
+      messages.push({ role: 'user', content: userMsgContent });
 
       // Create assistant bubble with cursor
       const wrap = document.createElement('div');
@@ -775,6 +863,7 @@ export function getWebChatHtml(): string {
           body: JSON.stringify({
             model: selectedModel || 'default',
             messages: reqMessages,
+            rag: isRagActive,
             stream: true,
             temperature: 0.7,
           }),

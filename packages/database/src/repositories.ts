@@ -8,6 +8,8 @@ import type {
   SystemMetricSample,
   StructuredLog,
   BenchmarkResult,
+  DocumentInfo,
+  DocumentChunk,
 } from '@local-ai/shared';
 import {
   DEFAULT_SERVER_PORT,
@@ -190,6 +192,7 @@ export class ModelRepository {
       format: r.format as any,
       quantization: r.quantization as any,
       contextLength: Number(r.context_length),
+      mmprojPath: r.mmproj_path || undefined,
     }));
   }
 
@@ -209,20 +212,22 @@ export class ModelRepository {
       format: r.format as any,
       quantization: r.quantization as any,
       contextLength: Number(r.context_length),
+      mmprojPath: r.mmproj_path || undefined,
     };
   }
 
   upsertInstallation(inst: ModelInstallation): void {
     const stmt = this.db.prepare(`
       INSERT INTO model_installations (
-        id, model_id, variant_id, name, local_path, size_bytes, sha256, installed_at, is_loaded, format, quantization, context_length
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, model_id, variant_id, name, local_path, size_bytes, sha256, installed_at, is_loaded, format, quantization, context_length, mmproj_path
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
         local_path = excluded.local_path,
         size_bytes = excluded.size_bytes,
         sha256 = excluded.sha256,
-        is_loaded = excluded.is_loaded
+        is_loaded = excluded.is_loaded,
+        mmproj_path = excluded.mmproj_path
     `);
 
     stmt.run(
@@ -237,7 +242,8 @@ export class ModelRepository {
       inst.isLoaded ? 1 : 0,
       inst.format,
       inst.quantization,
-      inst.contextLength
+      inst.contextLength,
+      inst.mmprojPath || null
     );
   }
 
@@ -613,3 +619,108 @@ export class BenchmarkRepository {
     }));
   }
 }
+
+export class DocumentRepository {
+  constructor(private db: IDatabase) {}
+
+  getAllDocuments(): DocumentInfo[] {
+    const rows = this.db.prepare('SELECT * FROM documents ORDER BY created_at DESC').all() as any[];
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      type: r.type,
+      sizeBytes: Number(r.size_bytes),
+      chunkCount: Number(r.chunk_count),
+      createdAt: Number(r.created_at),
+      updatedAt: Number(r.updated_at),
+    }));
+  }
+
+  getDocument(id: string): DocumentInfo | null {
+    const r = this.db.prepare('SELECT * FROM documents WHERE id = ?').get(id) as any;
+    if (!r) return null;
+    return {
+      id: r.id,
+      name: r.name,
+      type: r.type,
+      sizeBytes: Number(r.size_bytes),
+      chunkCount: Number(r.chunk_count),
+      createdAt: Number(r.created_at),
+      updatedAt: Number(r.updated_at),
+    };
+  }
+
+  createDocument(doc: DocumentInfo): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO documents (id, name, type, size_bytes, chunk_count, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        type = excluded.type,
+        size_bytes = excluded.size_bytes,
+        chunk_count = excluded.chunk_count,
+        updated_at = excluded.updated_at
+    `);
+    stmt.run(doc.id, doc.name, doc.type, doc.sizeBytes, doc.chunkCount, doc.createdAt, doc.updatedAt);
+  }
+
+  deleteDocument(id: string): void {
+    this.db.prepare('DELETE FROM document_chunks WHERE document_id = ?').run(id);
+    this.db.prepare('DELETE FROM documents WHERE id = ?').run(id);
+  }
+
+  insertChunks(chunks: DocumentChunk[]): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO document_chunks (id, document_id, chunk_index, content, embedding, token_count, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const c of chunks) {
+      stmt.run(
+        c.id,
+        c.documentId,
+        c.chunkIndex,
+        c.content,
+        c.embedding ? JSON.stringify(c.embedding) : null,
+        c.tokenCount,
+        Date.now()
+      );
+    }
+  }
+
+  getChunks(documentId?: string): DocumentChunk[] {
+    const query = documentId
+      ? 'SELECT * FROM document_chunks WHERE document_id = ? ORDER BY chunk_index ASC'
+      : 'SELECT * FROM document_chunks ORDER BY created_at DESC';
+    const rows = documentId
+      ? (this.db.prepare(query).all(documentId) as any[])
+      : (this.db.prepare(query).all() as any[]);
+    return rows.map((r) => ({
+      id: r.id,
+      documentId: r.document_id,
+      chunkIndex: Number(r.chunk_index),
+      content: r.content,
+      embedding: r.embedding ? JSON.parse(r.embedding) : undefined,
+      tokenCount: Number(r.token_count),
+    }));
+  }
+
+  getAllChunksWithDocName(): Array<DocumentChunk & { documentName: string }> {
+    const query = `
+      SELECT dc.*, d.name as document_name
+      FROM document_chunks dc
+      JOIN documents d ON dc.document_id = d.id
+      ORDER BY dc.chunk_index ASC
+    `;
+    const rows = this.db.prepare(query).all() as any[];
+    return rows.map((r) => ({
+      id: r.id,
+      documentId: r.document_id,
+      chunkIndex: Number(r.chunk_index),
+      content: r.content,
+      embedding: r.embedding ? JSON.parse(r.embedding) : undefined,
+      tokenCount: Number(r.token_count),
+      documentName: r.document_name || 'Document',
+    }));
+  }
+}
+

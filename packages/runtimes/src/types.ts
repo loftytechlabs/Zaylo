@@ -19,6 +19,7 @@ export interface RuntimeConfig {
   runtimeDir: string;
   lowMemoryMode?: boolean;
   flashAttention?: boolean;
+  mmprojPath?: string;
 }
 
 export interface RuntimeHealth {

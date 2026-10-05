@@ -101,6 +101,10 @@ export class LlamaRuntime implements InferenceRuntime {
       args.push('-fa');
     }
 
+    if (config.mmprojPath && fs.existsSync(config.mmprojPath)) {
+      args.push('--mmproj', path.resolve(config.mmprojPath));
+    }
+
     this.supervisor.setState('STARTING');
 
     return new Promise<RuntimeInstance>((resolve, reject) => {

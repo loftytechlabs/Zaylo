@@ -15,6 +15,9 @@ import type {
   BenchmarkResult,
   ChatCompletionRequest,
   ChatCompletionResponse,
+  DocumentInfo,
+  DocumentType,
+  RagSearchResult,
 } from '@local-ai/shared';
 
 export interface IPCChannels {
@@ -71,6 +74,12 @@ export interface IPCChannels {
   // Inference Playground
   'inference:chat': { request: ChatCompletionRequest; response: ChatCompletionResponse };
   'inference:abort': { request: { requestId: string }; response: boolean };
+
+  // Knowledge & Local Document RAG
+  'rag:list-documents': { request: void; response: DocumentInfo[] };
+  'rag:add-document': { request: { name: string; content: string; type?: DocumentType }; response: DocumentInfo };
+  'rag:delete-document': { request: { id: string }; response: boolean };
+  'rag:search': { request: { query: string; limit?: number; documentIds?: string[] }; response: RagSearchResult[] };
 
   // Benchmark
   'benchmark:run': { request: { modelId?: string; variantId?: string; promptTokens?: number; genTokens?: number }; response: BenchmarkResult };

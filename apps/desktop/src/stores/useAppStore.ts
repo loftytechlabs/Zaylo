@@ -14,6 +14,8 @@ import type {
   SystemMetricSample,
   StructuredLog,
   ChatMessage,
+  DocumentInfo,
+  DocumentType,
 } from '@local-ai/shared';
 
 export type NavTab =
@@ -82,6 +84,18 @@ interface AppStore {
   revokeDevice: (deviceId: string) => Promise<void>;
   deleteDevice: (deviceId: string) => Promise<void>;
 
+  // Local Document Knowledge & RAG
+  ragEnabled: boolean;
+  ragDocuments: DocumentInfo[];
+  fetchRagDocuments: () => Promise<void>;
+  addRagDocument: (name: string, content: string, type?: DocumentType) => Promise<DocumentInfo>;
+  deleteRagDocument: (id: string) => Promise<void>;
+  setRagEnabled: (enabled: boolean) => void;
+
+  // Multimodal Vision
+  pendingImage?: { dataUrl: string; name: string };
+  setPendingImage: (img?: { dataUrl: string; name: string }) => void;
+
   // Playground Chat State
   playgroundMessages: ChatMessage[];
   isGenerating: boolean;
@@ -132,6 +146,33 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setTemperature: (t) => set({ temperature: t }),
   setTopP: (p) => set({ topP: p }),
   setSelectedModel: (m) => set({ selectedModel: m }),
+
+  // RAG & Knowledge State
+  ragEnabled: false,
+  ragDocuments: [],
+  pendingImage: undefined,
+  setRagEnabled: (enabled) => set({ ragEnabled: enabled }),
+  setPendingImage: (img) => set({ pendingImage: img }),
+
+  fetchRagDocuments: async () => {
+    try {
+      const docs = await api.invoke('rag:list-documents', undefined);
+      set({ ragDocuments: docs || [] });
+    } catch (err) {
+      console.error('Failed to fetch rag documents:', err);
+    }
+  },
+
+  addRagDocument: async (name, content, type = 'txt') => {
+    const doc = await api.invoke('rag:add-document', { name, content, type });
+    await get().fetchRagDocuments();
+    return doc;
+  },
+
+  deleteRagDocument: async (id) => {
+    await api.invoke('rag:delete-document', { id });
+    await get().fetchRagDocuments();
+  },
 
   fetchHardware: async () => {
     try {
@@ -359,9 +400,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   sendChatMessage: async (content) => {
     const state = get();
-    if (state.isGenerating || !content.trim()) return;
+    if (state.isGenerating || (!content.trim() && !state.pendingImage)) return;
 
-    const userMsg: ChatMessage = { role: 'user', content: content.trim() };
+    const attachedImage = state.pendingImage;
+    const userMsg: ChatMessage = attachedImage
+      ? {
+          role: 'user',
+          content: [
+            { type: 'text', text: content.trim() || 'Describe and analyze this image.' },
+            { type: 'image_url', image_url: { url: attachedImage.dataUrl } },
+          ],
+        }
+      : { role: 'user', content: content.trim() };
+
     const allMsgs: ChatMessage[] = [];
     if (state.systemPrompt.trim()) {
       allMsgs.push({ role: 'system', content: state.systemPrompt.trim() });
@@ -370,6 +421,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     set((s) => ({
       playgroundMessages: [...s.playgroundMessages, userMsg, { role: 'assistant', content: '' }],
+      pendingImage: undefined,
       isGenerating: true,
       generationStats: undefined,
     }));
@@ -384,10 +436,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         temperature: state.temperature,
         top_p: state.topP,
         stream: false,
+        rag: state.ragEnabled,
       });
 
       const endTime = Date.now();
-      const contentOut = response.choices[0]?.message?.content || '';
+      const rawContent = response.choices[0]?.message?.content;
+      const contentOut = typeof rawContent === 'string'
+        ? rawContent
+        : (Array.isArray(rawContent) ? rawContent.map((p) => p.type === 'text' ? p.text : '').join('') : '');
+
       tokenCount = response.usage?.completion_tokens || Math.max(1, Math.ceil(contentOut.length / 4));
       const latencyMs = endTime - startTime;
       const tokPerSec = latencyMs > 0 ? (tokenCount / (latencyMs / 1000)) : 0;

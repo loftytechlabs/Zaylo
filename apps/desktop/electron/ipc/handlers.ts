@@ -1,13 +1,13 @@
 import { ipcMain, dialog, shell, BrowserWindow } from 'electron';
 import type { IPCChannels, IPCEvents } from '@local-ai/protocol';
-import { createDatabaseAsync, ServerRepository, ModelRepository, APIKeyRepository, DeviceRepository, MetricsRepository, LogsRepository, BenchmarkRepository } from '@local-ai/database';
+import { createDatabaseAsync, ServerRepository, ModelRepository, APIKeyRepository, DeviceRepository, MetricsRepository, LogsRepository, BenchmarkRepository, DocumentRepository } from '@local-ai/database';
 import { HardwareScanner } from '@local-ai/hardware';
 import { CapabilityEngine } from '@local-ai/capabilities';
 import { ModelManager } from '@local-ai/models';
 import { KeyManager } from '@local-ai/security';
 import { NetworkScanner, DevicePairingManager, generateQrCode } from '@local-ai/network';
 import { LlamaRuntime } from '@local-ai/runtime-llama';
-import { InferenceService } from '@local-ai/inference';
+import { InferenceService, RagEngine } from '@local-ai/inference';
 import { ApiServer } from '@local-ai/server';
 import { SystemMonitor } from '@local-ai/monitoring';
 import { getDefaultDatabasePath, getDefaultModelsDir, getDefaultRuntimeDir } from '@local-ai/shared';
@@ -22,6 +22,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
   const metricsRepo = new MetricsRepository(dbConn.raw);
   const logsRepo = new LogsRepository(dbConn.raw);
   const benchmarkRepo = new BenchmarkRepository(dbConn.raw);
+  const documentRepo = new DocumentRepository(dbConn.raw);
 
   let config = serverRepo.getConfig();
   const fs = await import('node:fs');
@@ -36,7 +37,8 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
   const keyManager = new KeyManager(keyRepo);
   const pairingManager = new DevicePairingManager(keyManager, deviceRepo);
   const runtime = new LlamaRuntime(effectiveRuntimeDir);
-  const inferenceService = new InferenceService(metricsRepo, logsRepo, config.maxConcurrentRequests);
+  const ragEngine = new RagEngine(documentRepo);
+  const inferenceService = new InferenceService(metricsRepo, logsRepo, config.maxConcurrentRequests, ragEngine);
   const monitor = new SystemMonitor(metricsRepo, inferenceService, 1000);
 
   let apiServer: ApiServer | null = null;
@@ -171,6 +173,23 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
     const quantMatch = filename.match(/(q\d_[k_0-9a-z]+|f16|f32|q8_0|q4_0|q4_1)/i);
     if (quantMatch) quant = quantMatch[1].toUpperCase();
 
+    const dir = path.dirname(targetPath);
+    let mmprojPath: string | undefined;
+    const baseWithoutExt = filename.replace(/\.gguf$/i, '');
+    const candidateMmproj = [
+      path.join(dir, `${baseWithoutExt}.mmproj.gguf`),
+      path.join(dir, `${baseWithoutExt}-mmproj.gguf`),
+      path.join(dir, `${baseWithoutExt}-mmproj-f16.gguf`),
+      path.join(dir, 'mmproj.gguf'),
+      path.join(dir, 'mmproj-f16.gguf'),
+    ];
+    for (const c of candidateMmproj) {
+      if (fs.existsSync(c)) {
+        mmprojPath = c;
+        break;
+      }
+    }
+
     const installation = {
       id: `inst_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       modelId,
@@ -183,6 +202,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
       format: 'gguf' as const,
       quantization: quant as any,
       contextLength: 4096,
+      mmprojPath,
     };
 
     modelRepo.upsertInstallation(installation);
@@ -250,6 +270,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
       runtimeDir: config.runtimeDirectory || getDefaultRuntimeDir(),
       lowMemoryMode: config.lowMemoryMode,
       flashAttention: config.flashAttention,
+      mmprojPath: targetInst.mmprojPath,
     });
 
     modelRepo.setLoadedInstallation(targetInst.id);
@@ -268,6 +289,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
       deviceRepo,
       pairingManager,
       logsRepo,
+      documentRepo,
     });
 
     await apiServer.start();
@@ -310,6 +332,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
         runtimeDir: config.runtimeDirectory || getDefaultRuntimeDir(),
         lowMemoryMode: config.lowMemoryMode,
         flashAttention: config.flashAttention,
+        mmprojPath: currentInst.mmprojPath,
       });
       inferenceService.setRuntime(runtime, currentInst.name);
 
@@ -321,6 +344,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
         deviceRepo,
         pairingManager,
         logsRepo,
+        documentRepo,
       });
       await apiServer.start();
       serverState = 'RUNNING';
@@ -348,6 +372,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
         runtimeDir: config.runtimeDirectory || getDefaultRuntimeDir(),
         lowMemoryMode: config.lowMemoryMode,
         flashAttention: config.flashAttention,
+        mmprojPath: target.mmprojPath,
       });
       inferenceService.setRuntime(runtime, target.name);
       modelRepo.setLoadedInstallation(target.id);
@@ -472,6 +497,24 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
     return inferenceService.abortRequest(requestId);
   });
 
+  // 8b. Knowledge Base & Local Document RAG
+  handle('rag:list-documents', async () => {
+    return documentRepo.getAllDocuments();
+  });
+
+  handle('rag:add-document', async ({ name, content, type = 'txt' }) => {
+    return ragEngine.ingestDocument(name, content, type);
+  });
+
+  handle('rag:delete-document', async ({ id }) => {
+    documentRepo.deleteDocument(id);
+    return true;
+  });
+
+  handle('rag:search', async ({ query, limit = 4, documentIds }) => {
+    return ragEngine.search(query, limit, documentIds);
+  });
+
   // 9. Benchmark
   handle('benchmark:run', async ({ modelId, promptTokens = 50, genTokens = 100 }) => {
     const installed = modelManager.getInstalledModels();
@@ -503,6 +546,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
         runtimeDir: config.runtimeDirectory || getDefaultRuntimeDir(),
         lowMemoryMode: config.lowMemoryMode,
         flashAttention: config.flashAttention,
+        mmprojPath: target.mmprojPath,
       });
 
       modelRepo.setLoadedInstallation(target.id);
@@ -519,6 +563,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
         deviceRepo,
         pairingManager,
         logsRepo,
+        documentRepo,
       });
       await apiServer.start();
 

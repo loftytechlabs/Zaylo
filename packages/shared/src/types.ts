@@ -96,6 +96,8 @@ export interface ModelVariant {
   estimatedRAMBytes: number;
   estimatedVRAMBytes: number;
   gpuLayers: number;
+  mmprojUrl?: string;
+  mmprojSizeBytes?: number;
 }
 
 export interface Model {
@@ -123,6 +125,7 @@ export interface ModelInstallation {
   format: ModelFormat;
   quantization: ModelQuantization;
   contextLength: number;
+  mmprojPath?: string;
 }
 
 export type DownloadStatus = 'pending' | 'downloading' | 'paused' | 'completed' | 'failed' | 'cancelled';
@@ -188,9 +191,23 @@ export interface RuntimeInstance {
   error?: string;
 }
 
+export interface ChatMessageTextContentPart {
+  type: 'text';
+  text: string;
+}
+
+export interface ChatMessageImageContentPart {
+  type: 'image_url';
+  image_url: {
+    url: string; // Base64 data URL (e.g. data:image/jpeg;base64,...) or image URL
+  };
+}
+
+export type ChatMessageContentPart = ChatMessageTextContentPart | ChatMessageImageContentPart;
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
+  content: string | ChatMessageContentPart[];
   name?: string;
 }
 
@@ -205,6 +222,38 @@ export interface ChatCompletionRequest {
   presence_penalty?: number;
   frequency_penalty?: number;
   user?: string;
+  rag?: boolean;
+  ragDocumentIds?: string[];
+}
+
+export type DocumentType = 'pdf' | 'md' | 'txt' | 'code' | 'json' | 'csv' | 'other';
+
+export interface DocumentInfo {
+  id: string;
+  name: string;
+  type: DocumentType;
+  sizeBytes: number;
+  chunkCount: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface DocumentChunk {
+  id: string;
+  documentId: string;
+  chunkIndex: number;
+  content: string;
+  embedding?: number[];
+  tokenCount: number;
+}
+
+export interface RagSearchResult {
+  chunkId: string;
+  documentId: string;
+  documentName: string;
+  content: string;
+  score: number;
+  chunkIndex: number;
 }
 
 export interface ChatCompletionChoice {

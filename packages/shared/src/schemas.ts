@@ -1,8 +1,21 @@
 import { z } from 'zod';
 
+export const ChatMessageContentPartSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('text'),
+    text: z.string(),
+  }),
+  z.object({
+    type: z.literal('image_url'),
+    image_url: z.object({
+      url: z.string(),
+    }),
+  }),
+]);
+
 export const ChatMessageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant', 'tool']),
-  content: z.string(),
+  content: z.union([z.string(), z.array(ChatMessageContentPartSchema)]),
   name: z.string().optional(),
 });
 
@@ -17,6 +30,8 @@ export const ChatCompletionRequestSchema = z.object({
   presence_penalty: z.number().min(-2).max(2).optional(),
   frequency_penalty: z.number().min(-2).max(2).optional(),
   user: z.string().optional(),
+  rag: z.boolean().optional().default(false),
+  ragDocumentIds: z.array(z.string()).optional(),
 });
 
 export const EmbeddingRequestSchema = z.object({

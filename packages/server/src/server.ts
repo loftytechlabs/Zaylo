@@ -6,12 +6,13 @@ import {
   EmbeddingRequest,
   ModelNotLoadedError,
   ValidationError,
+  AppError,
   LAN_SERVER_HOST,
   DEFAULT_SERVER_HOST,
 } from '@local-ai/shared';
 import { ModelManager } from '@local-ai/models';
 import { KeyManager, SecretRedactor } from '@local-ai/security';
-import { DeviceRepository, LogsRepository } from '@local-ai/database';
+import { DeviceRepository, LogsRepository, DocumentRepository } from '@local-ai/database';
 import { DevicePairingManager } from '@local-ai/network';
 import { InferenceService } from '@local-ai/inference';
 import { HardwareScanner } from '@local-ai/hardware';
@@ -26,6 +27,7 @@ export interface ApiServerOptions {
   deviceRepo: DeviceRepository;
   pairingManager: DevicePairingManager;
   logsRepo?: LogsRepository;
+  documentRepo?: DocumentRepository;
 }
 
 export class ApiServer {
@@ -36,6 +38,7 @@ export class ApiServer {
   private keyManager: KeyManager;
   private deviceRepo: DeviceRepository;
   private pairingManager: DevicePairingManager;
+  private documentRepo?: DocumentRepository;
   private isRunning = false;
 
   constructor(options: ApiServerOptions) {
@@ -45,6 +48,7 @@ export class ApiServer {
     this.keyManager = options.keyManager;
     this.deviceRepo = options.deviceRepo;
     this.pairingManager = options.pairingManager;
+    this.documentRepo = options.documentRepo;
 
     this.fastify = Fastify({
       logger: false,
@@ -261,6 +265,43 @@ export class ApiServer {
 
       const clientIp = req.ip || req.socket.remoteAddress || '127.0.0.1';
       return this.pairingManager.completePairing(body.pairingToken, body.deviceName, clientIp);
+    });
+
+    // 7. Local Documents & RAG Endpoints
+    this.fastify.get('/v1/documents', async () => {
+      return this.documentRepo ? this.documentRepo.getAllDocuments() : [];
+    });
+
+    this.fastify.post('/v1/documents', async (req: FastifyRequest) => {
+      const body = req.body as { name: string; content: string; type?: any };
+      if (!body?.name || !body?.content) {
+        throw new ValidationError('name and content are required');
+      }
+      if (!this.documentRepo) {
+        throw new AppError('Document repository is not configured', 'NOT_CONFIGURED');
+      }
+      const ragEngine = this.inferenceService.getRagEngine();
+      if (!ragEngine) {
+        throw new AppError('RAG engine is not configured', 'NOT_CONFIGURED');
+      }
+      return ragEngine.ingestDocument(body.name, body.content, body.type || 'txt');
+    });
+
+    this.fastify.delete('/v1/documents/:id', async (req: FastifyRequest) => {
+      const { id } = req.params as { id: string };
+      if (!this.documentRepo) return { success: false };
+      this.documentRepo.deleteDocument(id);
+      return { success: true };
+    });
+
+    this.fastify.post('/v1/rag/search', async (req: FastifyRequest) => {
+      const body = req.body as { query: string; limit?: number; documentIds?: string[] };
+      if (!body?.query) {
+        throw new ValidationError('query is required');
+      }
+      const ragEngine = this.inferenceService.getRagEngine();
+      if (!ragEngine) return [];
+      return ragEngine.search(body.query, body.limit || 4, body.documentIds);
     });
   }
 

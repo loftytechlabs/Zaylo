@@ -47,6 +47,7 @@ export const modelInstallations = sqliteTable('model_installations', {
   format: text('format').notNull(),
   quantization: text('quantization').notNull(),
   contextLength: integer('context_length').notNull(),
+  mmprojPath: text('mmproj_path'),
 });
 
 export const apiKeys = sqliteTable('api_keys', {
@@ -143,4 +144,24 @@ export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
   updatedAt: integer('updated_at').notNull(),
+});
+
+export const documents = sqliteTable('documents', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // 'pdf' | 'md' | 'txt' | 'code' | 'json' | 'csv' | 'other'
+  sizeBytes: integer('size_bytes').notNull(),
+  chunkCount: integer('chunk_count').notNull().default(0),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
+export const documentChunks = sqliteTable('document_chunks', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id').notNull(),
+  chunkIndex: integer('chunk_index').notNull(),
+  content: text('content').notNull(),
+  embedding: text('embedding'), // JSON array of numbers
+  tokenCount: integer('token_count').notNull().default(0),
+  createdAt: integer('created_at').notNull(),
 });

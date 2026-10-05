@@ -126,8 +126,31 @@ export class ModelManager {
         expectedSha256: variant.sha256,
         onProgress,
       })
-      .then((finalPath) => {
+      .then(async (finalPath) => {
         const stats = fs.statSync(finalPath);
+
+        let mmprojPath: string | undefined;
+        if (variant?.mmprojUrl) {
+          const mmprojFilename = path.basename(new URL(variant.mmprojUrl).pathname) || `${variantId}-mmproj.gguf`;
+          const mmprojDest = path.join(this.modelsDir, mmprojFilename);
+          if (fs.existsSync(mmprojDest)) {
+            mmprojPath = mmprojDest;
+          } else {
+            try {
+              mmprojPath = await this.downloader.download({
+                id: `${downloadId}_mmproj`,
+                modelId,
+                variantId: `${variantId}_mmproj`,
+                url: variant.mmprojUrl,
+                destPath: mmprojDest,
+                expectedSizeBytes: variant.mmprojSizeBytes || 500_000_000,
+              });
+            } catch (err: any) {
+              console.warn(`Failed to download mmproj for ${variantId}:`, err.message);
+            }
+          }
+        }
+
         const installation: ModelInstallation = {
           id: `inst_${variantId}`,
           modelId,
@@ -140,6 +163,7 @@ export class ModelManager {
           format: variant!.format,
           quantization: variant!.quantization,
           contextLength: variant!.contextLength,
+          mmprojPath,
         };
         this.modelRepo.upsertInstallation(installation);
       })

@@ -13,11 +13,11 @@ Run open-weights LLMs locally on macOS, Windows, and Linux with full data privac
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6.svg?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Fastify](https://img.shields.io/badge/Fastify-v5-000000.svg?style=flat-square&logo=fastify&logoColor=white)](https://fastify.dev)
-[![Tests Passing](https://img.shields.io/badge/Tests-18%2F18%20Passing-10b981.svg?style=flat-square)](tests)
+[![Tests Passing](https://img.shields.io/badge/Tests-27%2F27%20Passing-10b981.svg?style=flat-square)](tests)
 
 <br />
 
-[Installers](#installers) • [Overview](#overview) • [Desktop Features](#desktop-application) • [Local Network Access](#local-network--mobile-access) • [API & Integrations](#openai-compatible-api) • [Benchmarks](#hardware-benchmarks) • [Monorepo](#monorepo-architecture) • [Development](#development-setup)
+[Installers](#installers) • [Overview](#overview) • [Desktop Features](#desktop-application) • [Local Document RAG](#local-document-rag) • [Multimodal Vision](#multimodal-vision-vlms) • [Local Network Access](#local-network--mobile-access) • [API & Integrations](#openai-compatible-api) • [Benchmarks](#hardware-benchmarks) • [Monorepo](#monorepo-architecture) • [Development](#development-setup)
 
 </div>
 
@@ -29,12 +29,12 @@ Download pre-compiled release binaries for your operating system:
 
 | Operating System | Architecture | Format | Download Link |
 | :--- | :--- | :---: | :--- |
-| macOS | Apple Silicon (M1, M2, M3, M4) | .dmg | [Download Zaylo for Mac (Apple Silicon)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.1-arm64.dmg) |
-| macOS | Intel Core (x86_64) | .dmg | [Download Zaylo for Mac (Intel)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.1.dmg) |
-| Windows | 10 / 11 (64-bit Installer) | .exe | [Download Zaylo for Windows (Setup)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo.Setup.1.0.1.exe) |
-| Windows | 10 / 11 (64-bit Portable) | .exe | [Download Zaylo for Windows (Portable)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo.1.0.1.exe) |
-| Linux | Universal AppImage | .AppImage | [Download Zaylo for Linux (AppImage)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.1.AppImage) |
-| Linux | Debian / Ubuntu | .deb | [Download Zaylo for Linux (.deb)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.0.1.deb) |
+| macOS | Apple Silicon (M1, M2, M3, M4) | .dmg | [Download Zaylo for Mac (Apple Silicon)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.1.0-arm64.dmg) |
+| macOS | Intel Core (x86_64) | .dmg | [Download Zaylo for Mac (Intel)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.1.0.dmg) |
+| Windows | 10 / 11 (64-bit Installer) | .exe | [Download Zaylo for Windows (Setup)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo.Setup.1.1.0.exe) |
+| Windows | 10 / 11 (64-bit Portable) | .exe | [Download Zaylo for Windows (Portable)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo.1.1.0.exe) |
+| Linux | Universal AppImage | .AppImage | [Download Zaylo for Linux (AppImage)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.1.0.AppImage) |
+| Linux | Debian / Ubuntu | .deb | [Download Zaylo for Linux (.deb)](https://github.com/loftytechlabs/Zaylo/releases/latest/download/Zaylo-1.1.0.deb) |
 
 ---
 
@@ -46,10 +46,12 @@ Zaylo is an enterprise-grade, privacy-first local AI server and desktop applicat
 
 * **Zero Cloud Dependency**: All model weights, inference execution, and conversation history remain exclusively on local storage.
 * **Bare-Metal Acceleration**: Native support for Apple Silicon Metal (unified memory), NVIDIA CUDA, and multi-threaded CPU SIMD execution (AVX2/AVX-512).
-* **Zero-Install Mobile Chat**: Built-in QR pairing enables any smartphone or tablet on the local Wi-Fi network to chat with local models via an optimized Web Chat interface.
-* **OpenAI-Compatible API Gateway**: High-throughput Fastify server serving `/v1/chat/completions` with streaming Server-Sent Events (SSE).
+* **Local Document RAG**: Zero-cloud document ingestion (Markdown, TXT, JSON, CSV, code) with paragraph-aware chunking, SQLite-persisted hybrid BM25 + dense cosine retrieval, and automatic prompt augmentation with inline citations.
+* **Multimodal Vision (VLMs)**: First-class vision-language model execution (Qwen 2.5-VL, SmolVLM) via `llama-server` projector (`--mmproj`), clipboard image paste, file upload previews, and OpenAI-format `image_url` data URIs.
+* **Zero-Install Mobile Chat**: Built-in QR pairing enables any smartphone or tablet on the local Wi-Fi network to chat with local models via an optimized Web Chat interface with full RAG and vision support.
+* **OpenAI-Compatible API Gateway**: High-throughput Fastify server serving `/v1/chat/completions` with streaming Server-Sent Events (SSE), plus `/v1/documents` and `/v1/rag/search` RAG endpoints.
 * **Low-Memory Streaming Mode**: One-click 8-bit quantized KV cache (`q8_0`) and Flash Attention for efficient inference on memory-constrained systems.
-* **Embedded SQLite Persistence**: Zero-daemon SQLite WAL database persists models, hardware telemetry, benchmark passes, and paired devices.
+* **Embedded SQLite Persistence**: Zero-daemon SQLite WAL database persists models, documents, chunks, hardware telemetry, benchmark passes, and paired devices.
 
 ---
 
@@ -82,13 +84,16 @@ The Zaylo desktop application provides a visual control center for configuring, 
 * **Hardware Identification**: Automated host scan identifying CPU model, active GPU backend, core counts, and total system memory.
 
 ### 2. Models Catalog & Importer
-* **Curated Open-Weights Registry**: Download top models (Llama 3.2, Qwen 2.5, Mistral, DeepSeek, SmolLM2) directly from Hugging Face with SHA-256 integrity verification.
-* **Local GGUF Importer**: Drag and drop or browse any local `.gguf` file to register custom fine-tunes or third-party weights.
+* **Curated Open-Weights Registry**: Download top language and multimodal vision models (Llama 3.2, Qwen 2.5, Qwen 2.5-VL, SmolVLM, Mistral, DeepSeek, SmolLM2) directly from Hugging Face with SHA-256 integrity verification.
+* **Multimodal Projector Auto-Download**: Vision models automatically download and pair their corresponding `mmproj` tensor projector weights.
+* **Local GGUF Importer**: Drag and drop or browse any local `.gguf` file to register custom fine-tunes or third-party weights, with automatic companion `mmproj` detection.
 * **Quantization Switching**: Select between `Q4_K_M`, `Q8_0`, or full-precision weights depending on available hardware capacity.
 
 ### 3. Interactive Playground
 * **Multi-Turn Chat**: Complete Markdown rendering, syntax-highlighted code blocks, and one-click code copy buttons.
-* **Token Streaming**: Real-time token dispatch with sub-millisecond latency.
+* **Multimodal Vision Input**: Attach images via file dialog or direct clipboard paste (`Cmd+V` / `Ctrl+V`), with live preview chips and inline thumbnail bubbles.
+* **Knowledge Base (Local RAG)**: Dedicated drawer for dragging & dropping documents (`.md`, `.txt`, `.json`, `.csv`, `.py`, `.ts`, etc.) into your local vector database with an instant RAG ON/OFF toggle.
+* **Token Streaming**: Real-time token dispatch with sub-millisecond latency and live generation telemetry.
 * **Active Generation Control**: Instant stop button that halts inference and immediately releases compute resources.
 * **Parameter Tuning**: Adjust temperature, Top-P, max generation tokens, and custom System Prompts dynamically.
 
@@ -112,6 +117,41 @@ The Zaylo desktop application provides a visual control center for configuring, 
 ### 7. Performance Telemetry & Logs
 * **Real-Time Resource Sampler**: Live visual charts tracking CPU load, RAM utilization, GPU load, and VRAM consumption.
 * **Structured System Logs**: Color-coded stream of system events, HTTP requests, inference queries, and error diagnostics.
+
+## Local Document RAG
+
+Zaylo includes an embedded, 100% offline Retrieval-Augmented Generation (RAG) engine. You can chat with your private documents, source code, and knowledge bases without uploading any data to external servers or running external vector database services:
+
+```text
++---------------------+     Chunking & Tokenizing     +----------------------------+
+|  Markdown / TXT     |  ==========================>  |  SQLite WAL Database       |
+|  JSON / CSV / Code  |     (Sentence / Paragraph)    |  - BM25 Inverted Index     |
++---------------------+                               |  - Dense Vector Store      |
+                                                      +----------------------------+
+                                                                    ||
++---------------------+     Hybrid Retrieval (Top-K)                \/
+|  User Query         |  ==========================>  +----------------------------+
+|  "Explain auth flow"|                               |  Injected Citation Block   |
++---------------------+                               |  Contextual Prompt to LLM  |
+                                                      +----------------------------+
+```
+
+* **Zero-Cloud Processing**: Ingestion, chunking, vector indexing, and retrieval occur entirely within your local SQLite WAL database.
+* **Broad File Support**: Ingest Markdown (`.md`), plain text (`.txt`), JSON (`.json`), CSV (`.csv`), and source code (`.ts`, `.js`, `.py`, `.rs`, `.go`, etc.).
+* **Hybrid Scoring**: Combines lexical BM25 term-frequency matching with dense cosine vector similarity, guaranteeing high precision on technical keywords and semantic queries.
+* **Inline Citations**: Injects retrieved context blocks directly into the inference prompt with document name, chunk offset, and similarity scores.
+* **Interactive UI**: Upload and manage knowledge base files via the **Knowledge Base** drawer in the Desktop Playground, or toggle `RAG: ON` in the mobile web chat.
+
+---
+
+## Multimodal Vision (VLMs)
+
+Run cutting-edge Vision-Language Models locally to analyze, transcribe, and inspect diagrams, UI screenshots, and documents:
+
+* **Native `--mmproj` Projector Supervisor**: When loading vision models like **Qwen 2.5 VL 3B Instruct** or **SmolVLM 500M Instruct**, Zaylo automatically binds the companion multimodal projector weights (`mmproj-*.gguf`) into `llama-server`.
+* **Zero Configuration**: Curated vision models automatically pull their matching tensor projector files directly during download. Local GGUF imports automatically pair matching `*mmproj*.gguf` files present in the same directory.
+* **Clipboard & Drag-and-Drop**: Paste images directly from your clipboard (`Cmd+V` / `Ctrl+V`) or attach images in the Desktop Playground and mobile LAN web chat.
+* **Standard OpenAI Format**: Fully compatible with OpenAI multimodal message payloads (`type: "image_url"` with `data:image/...;base64` URIs).
 
 ---
 
@@ -208,6 +248,62 @@ curl http://localhost:8080/v1/chat/completions \
   }'
 ```
 
+### Multimodal Vision Request (Python)
+
+```python
+import base64
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:8080/v1", api_key="lcl_your_api_key")
+
+with open("diagram.png", "rb") as f:
+    b64_image = base64.b64encode(f.read()).decode("utf-8")
+
+response = client.chat.completions.create(
+    model="default",
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Analyze this architecture diagram."},
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64_image}"}}
+        ]
+    }]
+)
+print(response.choices[0].message.content)
+```
+
+### Local Document RAG Ingestion & Querying
+
+Ingest documents and search chunks programmatically:
+
+```bash
+# 1. Ingest a document into the SQLite RAG vector database
+curl -X POST http://localhost:8080/v1/documents \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer lcl_your_api_key" \
+  -d '{
+    "name": "architecture-spec.md",
+    "type": "markdown",
+    "content": "# System Architecture\nZaylo runs entirely on local hardware..."
+  }'
+
+# 2. Perform hybrid BM25 + cosine vector retrieval
+curl -X POST http://localhost:8080/v1/rag/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer lcl_your_api_key" \
+  -d '{"query": "hardware architecture", "limit": 3}'
+
+# 3. Chat with automatic RAG prompt augmentation & citations
+curl http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer lcl_your_api_key" \
+  -d '{
+    "model": "default",
+    "messages": [{"role": "user", "content": "How does Zaylo utilize hardware?"}],
+    "rag": true
+  }'
+```
+
 ### IDE Configuration (Cursor / Continue)
 
 Add Zaylo to your IDE model configuration (`~/.continue/config.json` or Cursor custom OpenAI provider):
@@ -249,14 +345,14 @@ Zaylo is built as a TypeScript monorepo managed with Turborepo and pnpm:
 ```text
 packages/
   capabilities/    Hardware scoring and layer offload planner
-  database/        SQLite embedded repositories with WAL mode
+  database/        SQLite embedded repositories with WAL mode (models, documents, benchmarks, devices)
   hardware/        Cross-platform CPU, GPU, VRAM, and RAM scanner
-  inference/       Request queue, rate limiter, and streaming pipeline
-  models/          Hugging Face downloader, SHA-256 verifier, GGUF parser
+  inference/       Request queue, streaming pipeline, and RAG hybrid search engine
+  models/          Hugging Face downloader, SHA-256 verifier, GGUF & mmproj parser
   monitoring/      System telemetry sampler and structured event logger
   network/         Network interface scanner, QR generator, device tracker
   protocol/        Typed IPC contracts and OpenAPI schemas
-  runtime-llama/   C++ llama-server process supervisor
+  runtime-llama/   C++ llama-server process supervisor with vision projector support
   runtimes/        Abstract runtime lifecycle interfaces
   security/        Cryptographic key manager and redaction filters
   server/          Fastify HTTP server, SSE router, and Web Chat UI

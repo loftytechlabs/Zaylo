@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
+  ChatMessage,
   EmbeddingRequest,
   EmbeddingResponse,
 } from '@local-ai/shared';
@@ -11,6 +12,17 @@ import type { InferenceRuntime } from '@local-ai/runtimes';
 import { RequestQueue } from './queue.js';
 import { MetricsRepository, LogsRepository } from '@local-ai/database';
 import { createChatCompletionResponse } from '@local-ai/protocol';
+import { RagEngine } from './rag.js';
+
+export function extractMessageText(message: ChatMessage): string {
+  if (typeof message.content === 'string') return message.content;
+  if (Array.isArray(message.content)) {
+    return message.content
+      .map((part) => (part.type === 'text' ? part.text || '' : '[image]'))
+      .join(' ');
+  }
+  return '';
+}
 
 export interface InferenceMetrics {
   totalRequests: number;
@@ -24,6 +36,7 @@ export class InferenceService {
   private currentRuntime?: InferenceRuntime;
   private currentModelName: string = '';
   private activeAbortControllers = new Map<string, AbortController>();
+  private ragEngine?: RagEngine;
   
   // Rolling metrics
   private totalRequests = 0;
@@ -33,9 +46,19 @@ export class InferenceService {
   constructor(
     private metricsRepo?: MetricsRepository,
     private logsRepo?: LogsRepository,
-    maxConcurrent: number = 4
+    maxConcurrent: number = 4,
+    ragEngine?: RagEngine
   ) {
     this.queue = new RequestQueue(maxConcurrent);
+    this.ragEngine = ragEngine;
+  }
+
+  public setRagEngine(ragEngine?: RagEngine): void {
+    this.ragEngine = ragEngine;
+  }
+
+  public getRagEngine(): RagEngine | undefined {
+    return this.ragEngine;
   }
 
   public setRuntime(runtime?: InferenceRuntime, modelName?: string): void {
@@ -96,7 +119,22 @@ export class InferenceService {
 
     try {
       this.totalRequests++;
-      const stream = this.currentRuntime.chatStream(request, abortController.signal);
+
+      // Automatically augment messages with local document context if RAG is requested
+      let effectiveRequest = { ...request };
+      if (request.rag && this.ragEngine) {
+        const userMessages = request.messages.filter((m) => m.role === 'user');
+        const lastUserMsg = userMessages[userMessages.length - 1];
+        if (lastUserMsg) {
+          const queryText = extractMessageText(lastUserMsg);
+          const searchResults = await this.ragEngine.search(queryText, 4, request.ragDocumentIds);
+          if (searchResults.length > 0) {
+            effectiveRequest.messages = this.ragEngine.augmentMessages(request.messages, searchResults);
+          }
+        }
+      }
+
+      const stream = this.currentRuntime.chatStream(effectiveRequest, abortController.signal);
 
       for await (const chunk of stream) {
         if (!firstTokenTime) {
@@ -124,7 +162,7 @@ export class InferenceService {
       this.recordMetricsSample(tokensPerSec, latencyMs);
 
       // Estimate prompt tokens roughly (4 chars per token)
-      const promptText = request.messages.map((m) => m.content).join(' ');
+      const promptText = effectiveRequest.messages.map(extractMessageText).join(' ');
       const promptTokens = Math.max(1, Math.ceil(promptText.length / 4));
 
       this.metricsRepo?.logRequest({
@@ -178,7 +216,7 @@ export class InferenceService {
       }
     }
 
-    const promptText = request.messages.map((m) => m.content).join(' ');
+    const promptText = request.messages.map(extractMessageText).join(' ');
     const promptTokens = Math.max(1, Math.ceil(promptText.length / 4));
     const completionTokens = Math.max(1, Math.ceil(accumulatedContent.length / 4));
 

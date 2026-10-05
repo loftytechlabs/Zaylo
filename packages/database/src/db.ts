@@ -251,7 +251,8 @@ function initializeSchema(raw: { exec: (sql: string) => void }): void {
       is_loaded INTEGER NOT NULL DEFAULT 0,
       format TEXT NOT NULL,
       quantization TEXT NOT NULL,
-      context_length INTEGER NOT NULL
+      context_length INTEGER NOT NULL,
+      mmproj_path TEXT
     );
 
     CREATE TABLE IF NOT EXISTS api_keys (
@@ -351,9 +352,30 @@ function initializeSchema(raw: { exec: (sql: string) => void }): void {
       updated_at INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS documents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      chunk_count INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS document_chunks (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      chunk_index INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      embedding TEXT,
+      token_count INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_requests_timestamp ON requests(timestamp);
     CREATE INDEX IF NOT EXISTS idx_samples_timestamp ON performance_samples(timestamp);
     CREATE INDEX IF NOT EXISTS idx_events_timestamp ON server_events(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_document_chunks_doc ON document_chunks(document_id);
   `);
 
   // Automatic schema migrations for existing databases
@@ -365,5 +387,8 @@ function initializeSchema(raw: { exec: (sql: string) => void }): void {
   } catch {}
   try {
     raw.exec('ALTER TABLE api_keys ADD COLUMN raw_key TEXT;');
+  } catch {}
+  try {
+    raw.exec('ALTER TABLE model_installations ADD COLUMN mmproj_path TEXT;');
   } catch {}
 }
