@@ -499,11 +499,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
         };
       });
     } catch (err: any) {
+      const rawError = err?.message || 'Inference request failed';
+      let friendlyError = `[Error: ${rawError}]`;
+
+      if (rawError.includes('image input is not supported') || rawError.includes('mmproj')) {
+        const activeName = state.selectedModel || 'The active model';
+        friendlyError = `⚠️ **Vision Projector Required**\n\n**${activeName}** is running in text-only mode and does not have a multimodal projector (\`--mmproj\`) loaded to process images.\n\n**To chat with images:**\n1. Open the **Models** tab in the left sidebar.\n2. Download a Vision model (such as **Qwen 2.5 VL 3B Instruct** or **SmolVLM 500M**).\n3. Start the server with the vision model—Zaylo will automatically attach the companion projector!`;
+      }
+
       set((s) => {
         const msgs = [...s.playgroundMessages];
         msgs[msgs.length - 1] = {
           role: 'assistant',
-          content: `[Error: ${err?.message || 'Inference request failed'}]`,
+          content: friendlyError,
         };
         return {
           playgroundMessages: msgs,

@@ -181,6 +181,10 @@ export const PlaygroundView: React.FC = () => {
   };
 
   const isServerReady = serverState === 'RUNNING';
+  const currentModelInst = installedModels.find(
+    (m) => m.name === selectedModel || m.name === serverInstance?.modelName || m.isLoaded
+  );
+  const isVisionSupported = Boolean(currentModelInst?.mmprojPath);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden relative">
@@ -201,6 +205,18 @@ export const PlaygroundView: React.FC = () => {
                 </option>
               ))}
             </select>
+
+            {currentModelInst && (
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                  isVisionSupported
+                    ? 'bg-blue-950/60 text-blue-300 border-blue-800/50'
+                    : 'bg-zinc-800/60 text-zinc-400 border-zinc-700/50'
+                }`}
+              >
+                {isVisionSupported ? 'VISION ENABLED' : 'TEXT ONLY'}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -319,23 +335,31 @@ export const PlaygroundView: React.FC = () => {
         <div className="p-4 border-t border-[#202227] bg-[#0c0d10]">
           {/* Pending Image Attachment Pill */}
           {pendingImage && (
-            <div className="mb-2 flex items-center gap-2 p-1.5 pl-2 bg-[#171a22] border border-blue-500/40 rounded-md w-fit">
-              <img
-                src={pendingImage.dataUrl}
-                alt="Pending upload preview"
-                className="w-7 h-7 rounded object-cover border border-zinc-700"
-              />
-              <span className="text-[11px] text-zinc-200 truncate max-w-[180px]">
-                {pendingImage.name}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPendingImage(undefined)}
-                className="p-1 text-zinc-400 hover:text-zinc-100 transition-colors"
-                title="Remove image"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+            <div className="mb-2.5 flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex items-center gap-2 p-1.5 pl-2 bg-[#171a22] border border-blue-500/40 rounded-md w-fit">
+                <img
+                  src={pendingImage.dataUrl}
+                  alt="Pending upload preview"
+                  className="w-7 h-7 rounded object-cover border border-zinc-700"
+                />
+                <span className="text-[11px] text-zinc-200 truncate max-w-[180px]">
+                  {pendingImage.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPendingImage(undefined)}
+                  className="p-1 text-zinc-400 hover:text-zinc-100 transition-colors"
+                  title="Remove image"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {!isVisionSupported && (
+                <div className="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-800/50 px-2.5 py-1 rounded-md flex items-center gap-1.5">
+                  <span>⚠️ Active model is text-only. Switch to a Vision model (e.g. Qwen 2.5-VL or SmolVLM) in the Models tab to analyze images.</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -381,7 +405,11 @@ export const PlaygroundView: React.FC = () => {
                     ? 'bg-blue-900/60 text-blue-300'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-[#1a1d24]'
                 }`}
-                title="Attach image for vision models (or paste from clipboard)"
+                title={
+                  isVisionSupported
+                    ? 'Attach image for vision model (or paste from clipboard)'
+                    : 'Attach image (Requires Vision model like Qwen 2.5-VL with mmproj)'
+                }
               >
                 <ImageIcon className="w-4 h-4" />
               </button>
