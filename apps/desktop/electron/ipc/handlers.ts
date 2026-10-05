@@ -626,7 +626,7 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
 
   // 10. App & System
   handle('app:get-version', async () => {
-    return '1.0.0';
+    return '2.0.0';
   });
 
   handle('app:select-directory', async ({ defaultPath }) => {
@@ -640,4 +640,13 @@ export async function registerIpcHandlers(mainWindow: BrowserWindow) {
   handle('app:open-external', async ({ url }) => {
     shell.openExternal(url);
   });
+
+  return async () => {
+    monitor.stop();
+    if (apiServer) {
+      await apiServer.stop().catch(() => {});
+      apiServer = null;
+    }
+    await runtime.stop().catch(() => {});
+  };
 }

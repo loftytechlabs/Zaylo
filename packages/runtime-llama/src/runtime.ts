@@ -1,6 +1,7 @@
 import { spawn, ChildProcess, execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
+import net from 'node:net';
 import {
   AppError,
   RuntimeInstance,
@@ -86,6 +87,63 @@ export class LlamaRuntime implements InferenceRuntime {
     }
   }
 
+  private isPortAvailable(port: number, host = '127.0.0.1'): Promise<boolean> {
+    return new Promise((resolve) => {
+      const server = net.createServer();
+      server.unref();
+      server.on('error', () => {
+        resolve(false);
+      });
+      server.listen({ port, host, exclusive: true }, () => {
+        server.close(() => {
+          resolve(true);
+        });
+      });
+    });
+  }
+
+  private async cleanupPortOrphan(port: number): Promise<void> {
+    try {
+      if (process.platform === 'win32') {
+        try {
+          execSync(`taskkill /F /IM llama-server.exe`, { stdio: 'ignore', timeout: 3000 });
+        } catch {}
+      } else {
+        try {
+          execSync(`pkill -9 -f "llama-server.*--port ${port}"`, { stdio: 'ignore', timeout: 3000 });
+        } catch {}
+        try {
+          execSync(`pkill -9 -f "llama-server"`, { stdio: 'ignore', timeout: 3000 });
+        } catch {}
+      }
+    } catch {}
+    await new Promise((r) => setTimeout(r, 250));
+  }
+
+  private async prepareCleanPort(preferredPort: number): Promise<number> {
+    const isFree = await this.isPortAvailable(preferredPort);
+    if (isFree) {
+      return preferredPort;
+    }
+
+    // Try killing any stale orphan
+    await this.cleanupPortOrphan(preferredPort);
+    const isNowFree = await this.isPortAvailable(preferredPort);
+    if (isNowFree) {
+      return preferredPort;
+    }
+
+    // If still busy, find next available port in range [preferredPort + 1, preferredPort + 50]
+    for (let p = preferredPort + 1; p <= preferredPort + 50; p++) {
+      const avail = await this.isPortAvailable(p);
+      if (avail) {
+        return p;
+      }
+    }
+
+    return preferredPort;
+  }
+
   public async start(config: RuntimeConfig): Promise<RuntimeInstance> {
     if (!this.binaryPath) {
       const binManager = new LlamaBinaryManager(this.runtimeDir);
@@ -100,6 +158,7 @@ export class LlamaRuntime implements InferenceRuntime {
       await this.stop();
     }
 
+    config.port = await this.prepareCleanPort(config.port);
     this.currentConfig = config;
     const contextLength = config.lowMemoryMode
       ? Math.min(config.contextSize || 2048, 2048)
@@ -264,7 +323,11 @@ export class LlamaRuntime implements InferenceRuntime {
   }
 
   public async stop(): Promise<void> {
+    const port = this.currentConfig?.port;
     if (!this.childProcess) {
+      if (port) {
+        await this.cleanupPortOrphan(port);
+      }
       this.supervisor.setState('STOPPED');
       return;
     }
@@ -272,7 +335,7 @@ export class LlamaRuntime implements InferenceRuntime {
     const pid = this.childProcess.pid;
     this.supervisor.setState('STOPPING');
 
-    return new Promise<void>((resolve) => {
+    await new Promise<void>((resolve) => {
       let isResolved = false;
       const done = () => {
         if (!isResolved) {
@@ -287,19 +350,35 @@ export class LlamaRuntime implements InferenceRuntime {
 
       try {
         if (pid) {
-          process.kill(pid, 'SIGINT');
+          if (process.platform === 'win32') {
+            try {
+              execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore', timeout: 3000 });
+            } catch {}
+          } else {
+            process.kill(pid, 'SIGTERM');
+          }
         }
       } catch {}
 
       setTimeout(() => {
         try {
           if (this.childProcess && pid) {
-            process.kill(pid, 'SIGKILL');
+            if (process.platform === 'win32') {
+              try {
+                execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore', timeout: 3000 });
+              } catch {}
+            } else {
+              process.kill(pid, 'SIGKILL');
+            }
           }
         } catch {}
         done();
-      }, 3000);
+      }, 2000);
     });
+
+    if (port) {
+      await this.cleanupPortOrphan(port);
+    }
   }
 
   public async health(): Promise<RuntimeHealth> {
@@ -401,13 +480,21 @@ export class LlamaRuntime implements InferenceRuntime {
     return res.json() as Promise<EmbeddingResponse>;
   }
 
-  private async pollHealthUntilReady(port: number, maxAttempts = 30): Promise<boolean> {
+  private async pollHealthUntilReady(port: number, maxAttempts = 60): Promise<boolean> {
+    // Initial settling delay so we don't query a closing or premature socket
+    await new Promise((r) => setTimeout(r, 400));
     for (let i = 0; i < maxAttempts; i++) {
+      if (!this.childProcess || this.childProcess.exitCode !== null) {
+        return false;
+      }
       try {
         const res = await fetch(`http://127.0.0.1:${port}/health`);
         if (res.ok) {
           const data = (await res.json()) as any;
           if (data.status === 'ok') {
+            if (!this.childProcess || this.childProcess.exitCode !== null) {
+              return false;
+            }
             return true;
           }
         }

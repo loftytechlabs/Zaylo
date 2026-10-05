@@ -97,7 +97,7 @@ async function createWindow() {
     return { action: 'deny' };
   });
 
-  await registerIpcHandlers(mainWindow);
+  cleanupHandlers = await registerIpcHandlers(mainWindow);
 
   if (VITE_DEV_SERVER_URL) {
     await mainWindow.loadURL(VITE_DEV_SERVER_URL);
@@ -106,6 +106,21 @@ async function createWindow() {
       ? path.join(app.getAppPath(), 'dist/index.html')
       : path.join(appRoot, '../dist/index.html');
     await mainWindow.loadFile(indexPath);
+  }
+}
+
+let cleanupHandlers: (() => Promise<void>) | null = null;
+let isQuitting = false;
+
+async function performCleanup() {
+  if (cleanupHandlers) {
+    const fn = cleanupHandlers;
+    cleanupHandlers = null;
+    try {
+      await fn();
+    } catch (e) {
+      console.error('[Electron Main] Error during cleanup:', e);
+    }
   }
 }
 
@@ -124,6 +139,29 @@ app.whenReady().then(() => {
     }
   }
   return createWindow();
+});
+
+app.on('before-quit', async (event) => {
+  if (!isQuitting && cleanupHandlers) {
+    event.preventDefault();
+    isQuitting = true;
+    await performCleanup();
+    app.quit();
+  }
+});
+
+app.on('will-quit', () => {
+  performCleanup().catch(() => {});
+});
+
+process.on('SIGINT', async () => {
+  await performCleanup();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  await performCleanup();
+  process.exit(0);
 });
 
 app.on('window-all-closed', () => {
