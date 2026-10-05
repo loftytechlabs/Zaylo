@@ -63,6 +63,29 @@ export class LlamaRuntime implements InferenceRuntime {
     return binManager.install();
   }
 
+  private static helpTextCache: Map<string, string> = new Map();
+
+  private getHelpText(binaryPath: string): string {
+    if (LlamaRuntime.helpTextCache.has(binaryPath)) {
+      return LlamaRuntime.helpTextCache.get(binaryPath)!;
+    }
+    try {
+      const output = execSync(`"${binaryPath}" -h`, {
+        timeout: 2000,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      LlamaRuntime.helpTextCache.set(binaryPath, output);
+      return output;
+    } catch (e: any) {
+      const stdout = e.stdout ? String(e.stdout) : '';
+      const stderr = e.stderr ? String(e.stderr) : '';
+      const combined = stdout + stderr;
+      LlamaRuntime.helpTextCache.set(binaryPath, combined);
+      return combined;
+    }
+  }
+
   public async start(config: RuntimeConfig): Promise<RuntimeInstance> {
     if (!this.binaryPath) {
       const binManager = new LlamaBinaryManager(this.runtimeDir);
@@ -93,13 +116,29 @@ export class LlamaRuntime implements InferenceRuntime {
       '--metrics',
     ];
 
+    const helpText = this.binaryPath ? this.getHelpText(this.binaryPath) : '';
+    const supportsFa = helpText ? (helpText.includes('-fa') || helpText.includes('--flash-attn')) : true;
+    const faTakesValue = helpText ? (/-fa[^\n]*\[on\|off\|auto\]/i.test(helpText) || /--flash-attn[^\n]*\[on\|off\|auto\]/i.test(helpText)) : true;
+
     if (config.lowMemoryMode) {
-      args.push('-fa', 'on');
-      args.push('-ctk', 'q8_0');
-      args.push('-ctv', 'q8_0');
+      if (supportsFa) {
+        if (faTakesValue) {
+          args.push('-fa', 'on');
+        } else {
+          args.push('-fa');
+        }
+      }
+      if (!helpText || helpText.includes('-ctk')) args.push('-ctk', 'q8_0');
+      if (!helpText || helpText.includes('-ctv')) args.push('-ctv', 'q8_0');
     } else if (config.flashAttention !== false) {
-      args.push('-fa', 'on');
-    } else {
+      if (supportsFa) {
+        if (faTakesValue) {
+          args.push('-fa', 'on');
+        } else {
+          args.push('-fa');
+        }
+      }
+    } else if (supportsFa && faTakesValue) {
       args.push('-fa', 'off');
     }
 
@@ -132,6 +171,7 @@ export class LlamaRuntime implements InferenceRuntime {
             ...process.env,
             PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
             GGML_METAL_PATH_RESOURCES: this.binaryPath ? this.binaryPath.replace(/llama-server$/, '') : undefined,
+            LLAMA_ARG_FLASH_ATTN: config.flashAttention === false ? 'off' : 'on',
           },
         });
 
