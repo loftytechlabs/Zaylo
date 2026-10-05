@@ -99,7 +99,6 @@ export const Sidebar: React.FC = () => {
             />
             <span className="text-xs font-medium text-zinc-300 font-mono">{serverState}</span>
           </div>
-          <span className="text-[11px] text-zinc-500 font-mono">100% Real</span>
         </div>
       </div>
     </aside>
