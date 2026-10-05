@@ -94,11 +94,13 @@ export class LlamaRuntime implements InferenceRuntime {
     ];
 
     if (config.lowMemoryMode) {
-      args.push('-fa');
+      args.push('-fa', 'on');
       args.push('-ctk', 'q8_0');
       args.push('-ctv', 'q8_0');
     } else if (config.flashAttention !== false) {
-      args.push('-fa');
+      args.push('-fa', 'on');
+    } else {
+      args.push('-fa', 'off');
     }
 
     if (config.mmprojPath && fs.existsSync(config.mmprojPath)) {
