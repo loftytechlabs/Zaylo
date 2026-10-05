@@ -165,14 +165,53 @@ body {
   background-color: #f1f5f9 !important;
 }
 
-/* Hover states */
+/* Comprehensive Light Theme Hover States (Prevents turning dark/black on hover) */
+[data-theme="light"] .hover\:bg-\[\#13151a\]:hover,
+[data-theme="light"] .hover\:bg-\[\#13151b\]:hover,
 [data-theme="light"] .hover\:bg-\[\#14161a\]:hover,
+[data-theme="light"] .hover\:bg-\[\#14161c\]:hover,
+[data-theme="light"] .hover\:bg-\[\#14161f\]:hover,
+[data-theme="light"] .hover\:bg-\[\#181a20\]:hover,
+[data-theme="light"] .hover\:bg-\[\#181a24\]:hover,
 [data-theme="light"] .hover\:bg-\[\#1a1c22\]:hover,
+[data-theme="light"] .hover\:bg-\[\#1a1d24\]:hover,
 [data-theme="light"] .hover\:bg-\[\#1f2229\]:hover,
+[data-theme="light"] .hover\:bg-\[\#20242e\]:hover,
+[data-theme="light"] .hover\:bg-\[\#22252e\]:hover,
 [data-theme="light"] .hover\:bg-\[\#222938\]:hover,
+[data-theme="light"] .hover\:bg-\[\#232731\]:hover,
 [data-theme="light"] .hover\:bg-\[\#242938\]:hover,
-[data-theme="light"] .hover\:bg-zinc-800:hover {
+[data-theme="light"] .hover\:bg-\[\#252b38\]:hover,
+[data-theme="light"] .hover\:bg-\[\#262a33\]:hover,
+[data-theme="light"] .hover\:bg-zinc-700:hover,
+[data-theme="light"] .hover\:bg-zinc-800:hover,
+[data-theme="light"] .hover\:bg-zinc-900:hover {
   background-color: #e2e8f0 !important;
+}
+
+/* Table rows and log lines on hover */
+[data-theme="light"] tr.hover\:bg-\[\#13151a\]:hover,
+[data-theme="light"] tr.hover\:bg-\[\#14161c\]:hover,
+[data-theme="light"] tr:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Light theme action and danger hover states */
+[data-theme="light"] .hover\:bg-emerald-900\/60:hover {
+  background-color: #d1fae5 !important;
+}
+
+[data-theme="light"] .hover\:bg-rose-900\/50:hover,
+[data-theme="light"] .hover\:bg-rose-900\/60:hover,
+[data-theme="light"] .hover\:bg-rose-950\/30:hover {
+  background-color: #ffe4e6 !important;
+}
+
+/* Hover borders */
+[data-theme="light"] .hover\:border-zinc-700:hover,
+[data-theme="light"] .hover\:border-\[\#30343f\]:hover,
+[data-theme="light"] .hover\:border-zinc-600:hover {
+  border-color: #94a3b8 !important;
 }
 
 /* Borders */
@@ -232,10 +271,25 @@ body {
   color: #64748b !important;
 }
 
+[data-theme="light"] .hover\:text-zinc-300:hover,
 [data-theme="light"] .hover\:text-zinc-200:hover,
 [data-theme="light"] .hover\:text-zinc-100:hover,
 [data-theme="light"] .hover\:text-white:hover {
   color: #0f172a !important;
+}
+
+[data-theme="light"] .hover\:text-blue-300:hover,
+[data-theme="light"] .hover\:text-blue-400:hover {
+  color: #2563eb !important;
+}
+
+[data-theme="light"] .hover\:text-rose-300:hover,
+[data-theme="light"] .hover\:text-rose-400:hover {
+  color: #e11d48 !important;
+}
+
+[data-theme="light"] .hover\:text-emerald-400:hover {
+  color: #059669 !important;
 }
 
 /* Inputs, Textareas, Selects */
@@ -245,6 +299,11 @@ body {
   background-color: #ffffff !important;
   color: #0f172a !important;
   border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 [data-theme="light"] input::placeholder,
